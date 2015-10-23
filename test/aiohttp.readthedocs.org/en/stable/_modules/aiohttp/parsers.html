@@ -1,0 +1,628 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.parsers &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/parsers.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/parsers",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/parsers";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.parsers</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Parser is a generator function (NOT coroutine).</span>
+
+<span class="sd">Parser receives data with generator&#39;s send() method and sends data to</span>
+<span class="sd">destination DataQueue. Parser receives ParserBuffer and DataQueue objects</span>
+<span class="sd">as a parameters of the parser call, all subsequent send() calls should</span>
+<span class="sd">send bytes objects. Parser sends parsed `term` to destination buffer with</span>
+<span class="sd">DataQueue.feed_data() method. DataQueue object should implement two methods.</span>
+<span class="sd">feed_data() - parser uses this method to send parsed protocol data.</span>
+<span class="sd">feed_eof() - parser uses this method for indication of end of parsing stream.</span>
+<span class="sd">To indicate end of incoming data stream EofStream exception should be sent</span>
+<span class="sd">into parser. Parser could throw exceptions.</span>
+
+<span class="sd">There are three stages:</span>
+
+<span class="sd"> * Data flow chain:</span>
+
+<span class="sd">    1. Application creates StreamParser object for storing incoming data.</span>
+<span class="sd">    2. StreamParser creates ParserBuffer as internal data buffer.</span>
+<span class="sd">    3. Application create parser and set it into stream buffer:</span>
+
+<span class="sd">        parser = HttpRequestParser()</span>
+<span class="sd">        data_queue = stream.set_parser(parser)</span>
+
+<span class="sd">    3. At this stage StreamParser creates DataQueue object and passes it</span>
+<span class="sd">       and internal buffer into parser as an arguments.</span>
+
+<span class="sd">        def set_parser(self, parser):</span>
+<span class="sd">            output = DataQueue()</span>
+<span class="sd">            self.p = parser(output, self._input)</span>
+<span class="sd">            return output</span>
+
+<span class="sd">    4. Application waits data on output.read()</span>
+
+<span class="sd">        while True:</span>
+<span class="sd">             msg = yield from output.read()</span>
+<span class="sd">             ...</span>
+
+<span class="sd"> * Data flow:</span>
+
+<span class="sd">    1. asyncio&#39;s transport reads data from socket and sends data to protocol</span>
+<span class="sd">       with data_received() call.</span>
+<span class="sd">    2. Protocol sends data to StreamParser with feed_data() call.</span>
+<span class="sd">    3. StreamParser sends data into parser with generator&#39;s send() method.</span>
+<span class="sd">    4. Parser processes incoming data and sends parsed data</span>
+<span class="sd">       to DataQueue with feed_data()</span>
+<span class="sd">    5. Application received parsed data from DataQueue.read()</span>
+
+<span class="sd"> * Eof:</span>
+
+<span class="sd">    1. StreamParser receives eof with feed_eof() call.</span>
+<span class="sd">    2. StreamParser throws EofStream exception into parser.</span>
+<span class="sd">    3. Then it unsets parser.</span>
+
+<span class="sd">_SocketSocketTransport -&gt;</span>
+<span class="sd">   -&gt; &quot;protocol&quot; -&gt; StreamParser -&gt; &quot;parser&quot; -&gt; DataQueue &lt;- &quot;application&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">asyncio.streams</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">errors</span>
+<span class="kn">from</span> <span class="nn">.streams</span> <span class="kn">import</span> <span class="n">FlowControlDataQueue</span><span class="p">,</span> <span class="n">EofStream</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;EofStream&#39;</span><span class="p">,</span> <span class="s">&#39;StreamParser&#39;</span><span class="p">,</span> <span class="s">&#39;StreamProtocol&#39;</span><span class="p">,</span>
+           <span class="s">&#39;ParserBuffer&#39;</span><span class="p">,</span> <span class="s">&#39;LinesParser&#39;</span><span class="p">,</span> <span class="s">&#39;ChunksParser&#39;</span><span class="p">)</span>
+
+<span class="n">DEFAULT_LIMIT</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">16</span>
+
+
+<div class="viewcode-block" id="StreamParser"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser">[docs]</a><span class="k">class</span> <span class="nc">StreamParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;StreamParser manages incoming bytes stream and protocol parsers.</span>
+
+<span class="sd">    StreamParser uses ParserBuffer as internal buffer.</span>
+
+<span class="sd">    set_parser() sets current parser, it creates DataQueue object</span>
+<span class="sd">    and sends ParserBuffer and DataQueue into parser generator.</span>
+
+<span class="sd">    unset_parser() sends EofStream into parser and then removes it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">buf</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">limit</span><span class="o">=</span><span class="n">DEFAULT_LIMIT</span><span class="p">,</span> <span class="n">eof_exc_class</span><span class="o">=</span><span class="ne">RuntimeError</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eof</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span> <span class="o">=</span> <span class="n">limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eof_exc_class</span> <span class="o">=</span> <span class="n">eof_exc_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span> <span class="o">=</span> <span class="n">buf</span> <span class="k">if</span> <span class="n">buf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">ParserBuffer</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">paused</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output</span>
+
+<div class="viewcode-block" id="StreamParser.set_transport"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.set_transport">[docs]</a>    <span class="k">def</span> <span class="nf">set_transport</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">transport</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">,</span> \
+            <span class="s">&#39;Transport already set&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">transport</span>
+</div>
+<div class="viewcode-block" id="StreamParser.at_eof"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.at_eof">[docs]</a>    <span class="k">def</span> <span class="nf">at_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eof</span>
+</div>
+<div class="viewcode-block" id="StreamParser.exception"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.exception">[docs]</a>    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>
+</div>
+<div class="viewcode-block" id="StreamParser.set_exception"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.set_exception">[docs]</a>    <span class="k">def</span> <span class="nf">set_exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exc</span><span class="p">,</span> <span class="n">ConnectionError</span><span class="p">):</span>
+            <span class="n">exc</span><span class="p">,</span> <span class="n">old_exc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eof_exc_class</span><span class="p">(),</span> <span class="n">exc</span>
+            <span class="n">exc</span><span class="o">.</span><span class="n">__cause__</span> <span class="o">=</span> <span class="n">old_exc</span>
+            <span class="n">exc</span><span class="o">.</span><span class="n">__context__</span> <span class="o">=</span> <span class="n">old_exc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span> <span class="o">=</span> <span class="n">exc</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="StreamParser.feed_data"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.feed_data">[docs]</a>    <span class="k">def</span> <span class="nf">feed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;send data to current parser or store in buffer.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StreamParser.feed_eof"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.feed_eof">[docs]</a>    <span class="k">def</span> <span class="nf">feed_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;send eof to all parsers, recursively.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">EofStream</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+            <span class="k">except</span> <span class="n">EofStream</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eof_exc_class</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eof</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="StreamParser.set_parser"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.set_parser">[docs]</a>    <span class="k">def</span> <span class="nf">set_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;set parser to stream. return parser&#39;s DataQueue.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unset_parser</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">FlowControlDataQueue</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_limit</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span><span class="p">:</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_exception</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">output</span>
+
+        <span class="c"># init parser</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">parser</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_buffer</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isgenerator</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="s">&#39;Generator is required&#39;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c"># initialize parser with data and parser buffers</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># parser still require more data</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="n">p</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="n">output</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eof</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">unset_parser</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">output</span>
+</div>
+<div class="viewcode-block" id="StreamParser.unset_parser"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamParser.unset_parser">[docs]</a>    <span class="k">def</span> <span class="nf">unset_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;unset parser, send eof to the parser and then remove it.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># TODO: write test</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="s">&#39;is_closed&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">is_closed</span><span class="p">():</span>
+                <span class="c"># TODO: log something</span>
+                <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">EofStream</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+        <span class="k">except</span> <span class="n">EofStream</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_eof_exc_class</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_parser</span> <span class="o">=</span> <span class="bp">None</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">StreamWriter</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">streams</span><span class="o">.</span><span class="n">StreamWriter</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">reader</span><span class="p">,</span> <span class="n">loop</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_protocol</span> <span class="o">=</span> <span class="n">protocol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="o">=</span> <span class="n">reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+
+
+<div class="viewcode-block" id="StreamProtocol"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol">[docs]</a><span class="k">class</span> <span class="nc">StreamProtocol</span><span class="p">(</span><span class="n">asyncio</span><span class="o">.</span><span class="n">streams</span><span class="o">.</span><span class="n">FlowControlMixin</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Helper class to adapt between Protocol and StreamReader.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">disconnect_error</span><span class="o">=</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">StreamParser</span><span class="p">(</span>
+            <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span> <span class="n">eof_exc_class</span><span class="o">=</span><span class="n">disconnect_error</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="StreamProtocol.is_connected"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol.is_connected">[docs]</a>    <span class="k">def</span> <span class="nf">is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="StreamProtocol.connection_made"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol.connection_made">[docs]</a>    <span class="k">def</span> <span class="nf">connection_made</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">set_transport</span><span class="p">(</span><span class="n">transport</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">StreamWriter</span><span class="p">(</span><span class="n">transport</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StreamProtocol.connection_lost"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol.connection_lost">[docs]</a>    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">set_transport</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">exc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">connection_lost</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StreamProtocol.data_received"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol.data_received">[docs]</a>    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="StreamProtocol.eof_received"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.StreamProtocol.eof_received">[docs]</a>    <span class="k">def</span> <span class="nf">eof_received</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ParserBuffer"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer">[docs]</a><span class="k">class</span> <span class="nc">ParserBuffer</span><span class="p">(</span><span class="nb">bytearray</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ParserBuffer is a bytearray extension.</span>
+
+<span class="sd">    ParserBuffer provides helper methods for parsers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_exception&#39;</span><span class="p">,</span> <span class="s">&#39;_writer&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feed_data</span><span class="p">()</span>
+        <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ParserBuffer.exception"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.exception">[docs]</a>    <span class="k">def</span> <span class="nf">exception</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.set_exception"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.set_exception">[docs]</a>    <span class="k">def</span> <span class="nf">set_exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span> <span class="o">=</span> <span class="n">exc</span>
+</div>
+    <span class="k">def</span> <span class="nf">_feed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+            <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_feed_data</span><span class="p">()</span>
+                <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exception</span>
+
+<div class="viewcode-block" id="ParserBuffer.feed_data"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.feed_data">[docs]</a>    <span class="k">def</span> <span class="nf">feed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.read"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.read">[docs]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;read() reads specified amount of bytes.&quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">data</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.readsome"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.readsome">[docs]</a>    <span class="k">def</span> <span class="nf">readsome</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;reads size of less amount of bytes.&quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">size</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
+                    <span class="n">size</span> <span class="o">=</span> <span class="n">length</span>
+
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">data</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.readuntil"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.readuntil">[docs]</a>    <span class="k">def</span> <span class="nf">readuntil</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">,</span> \
+            <span class="s">&#39;bytes is required: {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="n">stop_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">end</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">stop_len</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">end</span>
+                <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span><span class="p">(</span>
+                        <span class="s">&#39;Line is too long.&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
+
+                <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">data</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span><span class="p">(</span>
+                        <span class="s">&#39;Line is too long.&#39;</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.wait"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.wait">[docs]</a>    <span class="k">def</span> <span class="nf">wait</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;wait() waits for specified amount of bytes</span>
+<span class="sd">        then returns data without changing internal buffer.&quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">size</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.waituntil"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.waituntil">[docs]</a>    <span class="k">def</span> <span class="nf">waituntil</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;waituntil() reads until `stop` bytes sequence.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">,</span> \
+            <span class="s">&#39;bytes is required: {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="n">stop_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">pos</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">pos</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">stop_len</span>
+                <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">size</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span><span class="p">(</span>
+                        <span class="s">&#39;Line is too long. </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">limit</span><span class="p">)</span>
+
+                <span class="k">return</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">limit</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span><span class="p">(</span>
+                        <span class="s">&#39;Line is too long. </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">bytes</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">limit</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.skip"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.skip">[docs]</a>    <span class="k">def</span> <span class="nf">skip</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;skip() skips specified amount of bytes.&quot;&quot;&quot;</span>
+
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">size</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+
+        <span class="k">del</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ParserBuffer.skipuntil"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ParserBuffer.skipuntil">[docs]</a>    <span class="k">def</span> <span class="nf">skipuntil</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stop</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;skipuntil() reads until `stop` bytes sequence.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stop</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">,</span> \
+            <span class="s">&#39;bytes is required: {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="n">stop_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">stop_line</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">stop_line</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">stop_line</span> <span class="o">+</span> <span class="n">stop_len</span>
+                <span class="k">del</span> <span class="bp">self</span><span class="p">[:</span><span class="n">size</span><span class="p">]</span>
+                <span class="k">return</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_writer</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="k">yield</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="LinesParser"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.LinesParser">[docs]</a><span class="k">class</span> <span class="nc">LinesParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Lines parser.</span>
+
+<span class="sd">    Lines parser splits a bytes stream into a chunks of data, each chunk ends</span>
+<span class="sd">    with \\n symbol.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">DEFAULT_LIMIT</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span> <span class="o">=</span> <span class="n">limit</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">EofStream</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="ChunksParser"><a class="viewcode-back" href="../../api.html#aiohttp.parsers.ChunksParser">[docs]</a><span class="k">class</span> <span class="nc">ChunksParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Chunks parser.</span>
+
+<span class="sd">    Chunks parser splits a bytes stream into a specified</span>
+<span class="sd">    size chunks of data.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">8192</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_size</span> <span class="o">=</span> <span class="n">size</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_size</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">EofStream</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

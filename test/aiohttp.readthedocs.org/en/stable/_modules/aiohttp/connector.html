@@ -1,0 +1,896 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.connector &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/connector.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/connector",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/connector";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.connector</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">aiohttp</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">http.cookies</span>
+<span class="kn">import</span> <span class="nn">ssl</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">hashlib</span> <span class="kn">import</span> <span class="n">md5</span><span class="p">,</span> <span class="n">sha1</span><span class="p">,</span> <span class="n">sha256</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">ceil</span>
+<span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">MappingProxyType</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdrs</span>
+<span class="kn">from</span> <span class="nn">.client</span> <span class="kn">import</span> <span class="n">ClientRequest</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">ServerDisconnectedError</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">HttpProxyError</span><span class="p">,</span> <span class="n">ProxyConnectionError</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">ClientOSError</span><span class="p">,</span> <span class="n">ClientTimeoutError</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">FingerprintMismatch</span>
+<span class="kn">from</span> <span class="nn">.helpers</span> <span class="kn">import</span> <span class="n">BasicAuth</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;BaseConnector&#39;</span><span class="p">,</span> <span class="s">&#39;TCPConnector&#39;</span><span class="p">,</span> <span class="s">&#39;ProxyConnector&#39;</span><span class="p">,</span> <span class="s">&#39;UnixConnector&#39;</span><span class="p">)</span>
+
+<span class="n">PY_343</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+<span class="n">HASHFUNC_BY_DIGESTLEN</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">16</span><span class="p">:</span> <span class="n">md5</span><span class="p">,</span>
+    <span class="mi">20</span><span class="p">:</span> <span class="n">sha1</span><span class="p">,</span>
+    <span class="mi">32</span><span class="p">:</span> <span class="n">sha256</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">_source_traceback</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_transport</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">connector</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="n">loop</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_key</span> <span class="o">=</span> <span class="n">key</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="n">connector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request</span> <span class="o">=</span> <span class="n">request</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_protocol</span> <span class="o">=</span> <span class="n">protocol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">reader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">writer</span>
+
+        <span class="k">if</span> <span class="n">loop</span><span class="o">.</span><span class="n">get_debug</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_stack</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">_warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Unclosed connection {!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                           <span class="n">ResourceWarning</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="s">&#39;is_closed&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">is_closed</span><span class="p">():</span>
+                    <span class="k">return</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">_release</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_protocol</span><span class="p">,</span>
+                <span class="n">should_close</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+            <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;client_connection&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                       <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;Unclosed connection&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">context</span><span class="p">[</span><span class="s">&#39;source_traceback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_exception_handler</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">loop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">_release</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_protocol</span><span class="p">,</span>
+                <span class="n">should_close</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">_release</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_protocol</span><span class="p">,</span>
+                <span class="n">should_close</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transport</span> <span class="ow">is</span> <span class="bp">None</span>
+
+
+<div class="viewcode-block" id="BaseConnector"><a class="viewcode-back" href="../../client_reference.html#aiohttp.BaseConnector">[docs]</a><span class="k">class</span> <span class="nc">BaseConnector</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base connector class.</span>
+
+<span class="sd">    :param conn_timeout: (optional) Connect timeout.</span>
+<span class="sd">    :param keepalive_timeout: (optional) Keep-alive timeout.</span>
+<span class="sd">    :param bool force_close: Set to True to force close and do reconnect</span>
+<span class="sd">        after each request (and between redirects).</span>
+<span class="sd">    :param loop: Optional event loop.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_closed</span> <span class="o">=</span> <span class="bp">True</span>  <span class="c"># prevent AttributeError in __del__ if ctor was failed</span>
+    <span class="n">_source_traceback</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">conn_timeout</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">keepalive_timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                 <span class="n">share_cookies</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">force_close</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">loop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">loop</span><span class="o">.</span><span class="n">get_debug</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_stack</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conn_timeout</span> <span class="o">=</span> <span class="n">conn_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keepalive_timeout</span> <span class="o">=</span> <span class="n">keepalive_timeout</span>
+        <span class="k">if</span> <span class="n">share_cookies</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s">&#39;Using `share_cookies` is deprecated. &#39;</span>
+                <span class="s">&#39;Use Session object instead&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_share_cookies</span> <span class="o">=</span> <span class="n">share_cookies</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_force_close</span> <span class="o">=</span> <span class="n">force_close</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span> <span class="o">=</span> <span class="n">limit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_waiters</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_factory</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">aiohttp</span><span class="o">.</span><span class="n">StreamProtocol</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span>
+            <span class="n">disconnect_error</span><span class="o">=</span><span class="n">ServerDisconnectedError</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cookies</span> <span class="o">=</span> <span class="n">http</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">SimpleCookie</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="n">_warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Unclosed connector {!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                       <span class="n">ResourceWarning</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;connector&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                   <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;Unclosed connector&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">context</span><span class="p">[</span><span class="s">&#39;source_traceback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_exception_handler</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">force_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Ultimately close connection on releasing if True.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_force_close</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">limit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The limit for simultaneous connections to the same endpoint.</span>
+
+<span class="sd">        Endpoints are the same if they are have equal</span>
+<span class="sd">        (host, port, is_ssl) triple.</span>
+
+<span class="sd">        If limit is None the connector has no limit (default).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span>
+
+    <span class="k">def</span> <span class="nf">_cleanup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cleanup unused transports.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+        <span class="n">connections</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">timeout</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keepalive_timeout</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">conns</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">alive</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">t0</span> <span class="ow">in</span> <span class="n">conns</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">proto</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">proto</span><span class="o">.</span><span class="n">is_connected</span><span class="p">():</span>
+                        <span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">delta</span> <span class="o">=</span> <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keepalive_timeout</span> <span class="o">-</span> <span class="n">now</span>
+                        <span class="k">if</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                            <span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+                        <span class="k">elif</span> <span class="n">delta</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
+                            <span class="n">timeout</span> <span class="o">=</span> <span class="n">delta</span>
+
+                <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">alive</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">t0</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">alive</span><span class="p">:</span>
+                <span class="n">connections</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">alive</span>
+
+        <span class="k">if</span> <span class="n">connections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_at</span><span class="p">(</span>
+                <span class="n">ceil</span><span class="p">(</span><span class="n">now</span> <span class="o">+</span> <span class="n">timeout</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span> <span class="o">=</span> <span class="n">connections</span>
+
+    <span class="k">def</span> <span class="nf">_start_cleanup_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_at</span><span class="p">(</span>
+                <span class="n">ceil</span><span class="p">(</span><span class="n">now</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keepalive_timeout</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseConnector.close"><a class="viewcode-back" href="../../client_reference.html#aiohttp.BaseConnector.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close all opened transports.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="s">&#39;is_closed&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">is_closed</span><span class="p">():</span>
+                    <span class="k">return</span>
+
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">t0</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                    <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="k">for</span> <span class="n">transport</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+                <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_handle</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is connector closed.</span>
+
+<span class="sd">        A readonly property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span>
+
+    <span class="k">def</span> <span class="nf">update_cookies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cookies</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update shared cookies.</span>
+
+<span class="sd">        Deprecated, use ClientSession instead.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cookies</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">cookies</span> <span class="o">=</span> <span class="n">cookies</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">cookies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">PY_343</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">http</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">Morsel</span><span class="p">):</span>
+                    <span class="c"># use dict method because SimpleCookie class modifies value</span>
+                    <span class="nb">dict</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+<div class="viewcode-block" id="BaseConnector.connect"><a class="viewcode-back" href="../../client_reference.html#aiohttp.BaseConnector.connect">[docs]</a>    <span class="k">def</span> <span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get from pool or create new connection.&quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">ssl</span><span class="p">)</span>
+
+        <span class="c"># use short-circuit</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span><span class="p">:</span>
+                <span class="n">fut</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_waiters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fut</span><span class="p">)</span>
+                <span class="k">yield from</span> <span class="n">fut</span>
+
+        <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conn_timeout</span><span class="p">:</span>
+                    <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_create_connection</span><span class="p">(</span><span class="n">req</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_conn_timeout</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_connection</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientTimeoutError</span><span class="p">(</span>
+                    <span class="s">&#39;Connection timeout to host {0[0]}:{0[1]} ssl:{0[2]}&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">exc</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">ClientOSError</span><span class="p">(</span>
+                    <span class="n">exc</span><span class="o">.</span><span class="n">errno</span><span class="p">,</span>
+                    <span class="s">&#39;Cannot connect to host {0[0]}:{0[1]} ssl:{0[2]} [{1}]&#39;</span>
+                    <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">transport</span><span class="p">)</span>
+        <span class="n">conn</span> <span class="o">=</span> <span class="n">Connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">conn</span>
+</div>
+    <span class="k">def</span> <span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">conns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="n">conns</span><span class="p">:</span>
+            <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">t0</span> <span class="o">=</span> <span class="n">conns</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">proto</span><span class="o">.</span><span class="n">is_connected</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">t1</span> <span class="o">-</span> <span class="n">t0</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keepalive_timeout</span><span class="p">:</span>
+                    <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">conns</span><span class="p">:</span>
+                        <span class="c"># The very last connection was reclaimed: drop the key</span>
+                        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">return</span> <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span>
+        <span class="c"># No more connections: drop the key</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">_release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">should_close</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span><span class="p">:</span>
+            <span class="c"># acquired connection is already released on connector closing</span>
+            <span class="k">return</span>
+
+        <span class="n">acquired</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">acquired</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">transport</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>  <span class="c"># pragma: no cover</span>
+            <span class="c"># this may be result of undetermenistic order of objects</span>
+            <span class="c"># finalization due garbage collection.</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">acquired</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_limit</span><span class="p">:</span>
+                <span class="n">waiters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_waiters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">while</span> <span class="n">waiters</span><span class="p">:</span>
+                    <span class="n">waiter</span> <span class="o">=</span> <span class="n">waiters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">waiter</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
+                        <span class="n">waiter</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+                        <span class="k">break</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">response</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">should_close</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_force_close</span><span class="p">:</span>
+                <span class="n">should_close</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">elif</span> <span class="n">resp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">should_close</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">_should_close</span>
+
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">protocol</span><span class="o">.</span><span class="n">reader</span>
+        <span class="k">if</span> <span class="n">should_close</span> <span class="ow">or</span> <span class="p">(</span><span class="n">reader</span><span class="o">.</span><span class="n">output</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reader</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">at_eof</span><span class="p">()):</span>
+            <span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">conns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">conns</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">conns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_conns</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">conns</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">transport</span><span class="p">,</span> <span class="n">protocol</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
+            <span class="n">reader</span><span class="o">.</span><span class="n">unset_parser</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_start_cleanup_task</span><span class="p">()</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+<div class="viewcode-block" id="BaseConnector._create_connection"><a class="viewcode-back" href="../../client_reference.html#aiohttp.BaseConnector._create_connection">[docs]</a>    <span class="k">def</span> <span class="nf">_create_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<span class="n">_SSL_OP_NO_COMPRESSION</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ssl</span><span class="p">,</span> <span class="s">&quot;OP_NO_COMPRESSION&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+<span class="n">_marker</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="TCPConnector"><a class="viewcode-back" href="../../client_reference.html#aiohttp.TCPConnector">[docs]</a><span class="k">class</span> <span class="nc">TCPConnector</span><span class="p">(</span><span class="n">BaseConnector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;TCP connector.</span>
+
+<span class="sd">    :param bool verify_ssl: Set to True to check ssl certifications.</span>
+<span class="sd">    :param bytes fingerprint: Pass the binary md5, sha1, or sha256</span>
+<span class="sd">        digest of the expected certificate in DER format to verify</span>
+<span class="sd">        that the certificate the server presents matches. See also</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Transport_Layer_Security#Certificate_pinning</span>
+<span class="sd">    :param bool resolve: Set to True to do DNS lookup for host name.</span>
+<span class="sd">    :param family: socket address family</span>
+<span class="sd">    :param args: see :class:`BaseConnector`</span>
+<span class="sd">    :param kwargs: see :class:`BaseConnector`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">verify_ssl</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">fingerprint</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">resolve</span><span class="o">=</span><span class="n">_marker</span><span class="p">,</span> <span class="n">use_dns_cache</span><span class="o">=</span><span class="n">_marker</span><span class="p">,</span>
+                 <span class="n">family</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ssl_context</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">verify_ssl</span> <span class="ow">and</span> <span class="n">ssl_context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;Either disable ssl certificate validation by &quot;</span>
+                <span class="s">&quot;verify_ssl=False or specify ssl_context, not both.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_verify_ssl</span> <span class="o">=</span> <span class="n">verify_ssl</span>
+
+        <span class="k">if</span> <span class="n">fingerprint</span><span class="p">:</span>
+            <span class="n">digestlen</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">fingerprint</span><span class="p">)</span>
+            <span class="n">hashfunc</span> <span class="o">=</span> <span class="n">HASHFUNC_BY_DIGESTLEN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">digestlen</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">hashfunc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;fingerprint has invalid length&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_hashfunc</span> <span class="o">=</span> <span class="n">hashfunc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span> <span class="o">=</span> <span class="n">fingerprint</span>
+
+        <span class="k">if</span> <span class="n">resolve</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_marker</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s">&quot;resolve parameter is deprecated, &quot;</span>
+                           <span class="s">&quot;use use_dns_cache instead&quot;</span><span class="p">),</span>
+                          <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">use_dns_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_marker</span> <span class="ow">and</span> <span class="n">resolve</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_marker</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_dns_cache</span> <span class="o">!=</span> <span class="n">resolve</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;use_dns_cache must agree with resolve&quot;</span><span class="p">)</span>
+            <span class="n">_use_dns_cache</span> <span class="o">=</span> <span class="n">use_dns_cache</span>
+        <span class="k">elif</span> <span class="n">use_dns_cache</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_marker</span><span class="p">:</span>
+            <span class="n">_use_dns_cache</span> <span class="o">=</span> <span class="n">use_dns_cache</span>
+        <span class="k">elif</span> <span class="n">resolve</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_marker</span><span class="p">:</span>
+            <span class="n">_use_dns_cache</span> <span class="o">=</span> <span class="n">resolve</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_use_dns_cache</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_use_dns_cache</span> <span class="o">=</span> <span class="n">_use_dns_cache</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ssl_context</span> <span class="o">=</span> <span class="n">ssl_context</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_family</span> <span class="o">=</span> <span class="n">family</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">verify_ssl</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do check for ssl certifications?&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_ssl</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">fingerprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Expected ssl certificate fingerprint.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ssl_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;SSLContext instance for https requests.</span>
+
+<span class="sd">        Lazy property, creates context on demand.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ssl_context</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verify_ssl</span><span class="p">:</span>
+                <span class="n">sslcontext</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">SSLContext</span><span class="p">(</span><span class="n">ssl</span><span class="o">.</span><span class="n">PROTOCOL_SSLv23</span><span class="p">)</span>
+                <span class="n">sslcontext</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_SSLv2</span>
+                <span class="n">sslcontext</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">OP_NO_SSLv3</span>
+                <span class="n">sslcontext</span><span class="o">.</span><span class="n">options</span> <span class="o">|=</span> <span class="n">_SSL_OP_NO_COMPRESSION</span>
+                <span class="n">sslcontext</span><span class="o">.</span><span class="n">set_default_verify_paths</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sslcontext</span> <span class="o">=</span> <span class="n">ssl</span><span class="o">.</span><span class="n">create_default_context</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ssl_context</span> <span class="o">=</span> <span class="n">sslcontext</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ssl_context</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">family</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Socket family like AF_INET.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_family</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">use_dns_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;True if local DNS caching is enabled.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_dns_cache</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cached_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read-only dict of cached DNS record.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">MappingProxyType</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TCPConnector.clear_dns_cache"><a class="viewcode-back" href="../../client_reference.html#aiohttp.TCPConnector.clear_dns_cache">[docs]</a>    <span class="k">def</span> <span class="nf">clear_dns_cache</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove specified host/port or clear all dns local cache.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">port</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="o">.</span><span class="n">pop</span><span class="p">((</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">),</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">host</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">port</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;either both host and port &quot;</span>
+                             <span class="s">&quot;or none of them are allowed&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Do DNS lookup for host name?&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s">&quot;.resolve property is deprecated, &quot;</span>
+                       <span class="s">&quot;use .dns_cache instead&quot;</span><span class="p">),</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_dns_cache</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">resolved_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The dict of (host, port) -&gt; (ipaddr, port) pairs.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s">&quot;.resolved_hosts property is deprecated, &quot;</span>
+                       <span class="s">&quot;use .cached_hosts instead&quot;</span><span class="p">),</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cached_hosts</span>
+
+<div class="viewcode-block" id="TCPConnector.clear_resolved_hosts"><a class="viewcode-back" href="../../client_reference.html#aiohttp.TCPConnector.clear_resolved_hosts">[docs]</a>    <span class="k">def</span> <span class="nf">clear_resolved_hosts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Remove specified host/port or clear all resolve cache.&quot;&quot;&quot;</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">((</span><span class="s">&quot;.clear_resolved_hosts() is deprecated, &quot;</span>
+                       <span class="s">&quot;use .clear_dns_cache() instead&quot;</span><span class="p">),</span>
+                      <span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">host</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">port</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clear_dns_cache</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clear_dns_cache</span><span class="p">()</span>
+</div>
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_resolve_host</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_use_dns_cache</span><span class="p">:</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="p">:</span>
+                <span class="n">infos</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">getaddrinfo</span><span class="p">(</span>
+                    <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">socket</span><span class="o">.</span><span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_family</span><span class="p">)</span>
+
+                <span class="n">hosts</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">family</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">address</span> <span class="ow">in</span> <span class="n">infos</span><span class="p">:</span>
+                    <span class="n">hosts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="p">{</span><span class="s">&#39;hostname&#39;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span>
+                         <span class="s">&#39;host&#39;</span><span class="p">:</span> <span class="n">address</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="n">address</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                         <span class="s">&#39;family&#39;</span><span class="p">:</span> <span class="n">family</span><span class="p">,</span> <span class="s">&#39;proto&#39;</span><span class="p">:</span> <span class="n">proto</span><span class="p">,</span>
+                         <span class="s">&#39;flags&#39;</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">AI_NUMERICHOST</span><span class="p">})</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">hosts</span>
+
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cached_hosts</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[{</span><span class="s">&#39;hostname&#39;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span> <span class="s">&#39;host&#39;</span><span class="p">:</span> <span class="n">host</span><span class="p">,</span> <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="n">port</span><span class="p">,</span>
+                     <span class="s">&#39;family&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_family</span><span class="p">,</span> <span class="s">&#39;proto&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;flags&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}]</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_create_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create connection.</span>
+
+<span class="sd">        Has same keyword arguments as BaseEventLoop.create_connection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">ssl</span><span class="p">:</span>
+            <span class="n">sslcontext</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ssl_context</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sslcontext</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">hosts</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resolve_host</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+        <span class="n">exc</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">for</span> <span class="n">hinfo</span> <span class="ow">in</span> <span class="n">hosts</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">host</span> <span class="o">=</span> <span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;host&#39;</span><span class="p">]</span>
+                <span class="n">port</span> <span class="o">=</span> <span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;port&#39;</span><span class="p">]</span>
+                <span class="n">transp</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_connection</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_factory</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span>
+                    <span class="n">ssl</span><span class="o">=</span><span class="n">sslcontext</span><span class="p">,</span> <span class="n">family</span><span class="o">=</span><span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;family&#39;</span><span class="p">],</span>
+                    <span class="n">proto</span><span class="o">=</span><span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;proto&#39;</span><span class="p">],</span> <span class="n">flags</span><span class="o">=</span><span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;flags&#39;</span><span class="p">],</span>
+                    <span class="n">server_hostname</span><span class="o">=</span><span class="n">hinfo</span><span class="p">[</span><span class="s">&#39;hostname&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">sslcontext</span> <span class="k">else</span> <span class="bp">None</span><span class="p">)</span>
+                <span class="n">has_cert</span> <span class="o">=</span> <span class="n">transp</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&#39;sslcontext&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">has_cert</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span><span class="p">:</span>
+                    <span class="n">sock</span> <span class="o">=</span> <span class="n">transp</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&#39;socket&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="s">&#39;getpeercert&#39;</span><span class="p">):</span>
+                        <span class="c"># Workaround for asyncio 3.5.0</span>
+                        <span class="c"># Starting from 3.5.1 version</span>
+                        <span class="c"># there is &#39;ssl_object&#39; extra info in transport</span>
+                        <span class="n">sock</span> <span class="o">=</span> <span class="n">transp</span><span class="o">.</span><span class="n">_ssl_protocol</span><span class="o">.</span><span class="n">_sslpipe</span><span class="o">.</span><span class="n">ssl_object</span>
+                    <span class="c"># gives DER-encoded cert as a sequence of bytes (or None)</span>
+                    <span class="n">cert</span> <span class="o">=</span> <span class="n">sock</span><span class="o">.</span><span class="n">getpeercert</span><span class="p">(</span><span class="n">binary_form</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="k">assert</span> <span class="n">cert</span>
+                    <span class="n">got</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hashfunc</span><span class="p">(</span><span class="n">cert</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">()</span>
+                    <span class="n">expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fingerprint</span>
+                    <span class="k">if</span> <span class="n">got</span> <span class="o">!=</span> <span class="n">expected</span><span class="p">:</span>
+                        <span class="n">transp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                        <span class="k">raise</span> <span class="n">FingerprintMismatch</span><span class="p">(</span><span class="n">expected</span><span class="p">,</span> <span class="n">got</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">transp</span><span class="p">,</span> <span class="n">proto</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ClientOSError</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">errno</span><span class="p">,</span>
+                                <span class="s">&#39;Can not connect to </span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s"> [</span><span class="si">%s</span><span class="s">]&#39;</span> <span class="o">%</span>
+                                <span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">strerror</span><span class="p">))</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+</div>
+<div class="viewcode-block" id="ProxyConnector"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ProxyConnector">[docs]</a><span class="k">class</span> <span class="nc">ProxyConnector</span><span class="p">(</span><span class="n">TCPConnector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Http Proxy connector.</span>
+
+<span class="sd">    :param str proxy: Proxy URL address. Only http proxy supported.</span>
+<span class="sd">    :param proxy_auth: (optional) Proxy HTTP Basic Auth</span>
+<span class="sd">    :type proxy_auth: aiohttp.helpers.BasicAuth</span>
+<span class="sd">    :param args: see :class:`TCPConnector`</span>
+<span class="sd">    :param kwargs: see :class:`TCPConnector`</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    &gt;&gt;&gt; conn = ProxyConnector(proxy=&quot;http://some.proxy.com&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; session = ClientSession(connector=conn)</span>
+<span class="sd">    &gt;&gt;&gt; resp = yield from session.get(&#39;http://python.org&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">proxy_auth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">force_close</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">force_close</span><span class="o">=</span><span class="n">force_close</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_proxy</span> <span class="o">=</span> <span class="n">proxy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_auth</span> <span class="o">=</span> <span class="n">proxy_auth</span>
+        <span class="k">assert</span> <span class="n">proxy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;http://&#39;</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s">&quot;Only http proxy supported&quot;</span><span class="p">,</span> <span class="n">proxy</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">proxy_auth</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">proxy_auth</span><span class="p">,</span> <span class="n">BasicAuth</span><span class="p">),</span> <span class="p">(</span>
+            <span class="s">&quot;proxy_auth must be None or BasicAuth() tuple&quot;</span><span class="p">,</span> <span class="n">proxy_auth</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Proxy URL.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxy</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">proxy_auth</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Proxy auth info.</span>
+
+<span class="sd">        Should be BasicAuth instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxy_auth</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_create_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="n">proxy_req</span> <span class="o">=</span> <span class="n">ClientRequest</span><span class="p">(</span>
+            <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_proxy</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">{</span><span class="n">hdrs</span><span class="o">.</span><span class="n">HOST</span><span class="p">:</span> <span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">},</span>
+            <span class="n">auth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_proxy_auth</span><span class="p">,</span>
+            <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="k">yield from</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_create_connection</span><span class="p">(</span><span class="n">proxy_req</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ProxyConnectionError</span><span class="p">(</span><span class="o">*</span><span class="n">exc</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">req</span><span class="o">.</span><span class="n">ssl</span><span class="p">:</span>
+            <span class="n">req</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="s">&#39;{scheme}://{host}{path}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">scheme</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">scheme</span><span class="p">,</span>
+                                                        <span class="n">host</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">netloc</span><span class="p">,</span>
+                                                        <span class="n">path</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">AUTHORIZATION</span> <span class="ow">in</span> <span class="n">proxy_req</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">auth</span> <span class="o">=</span> <span class="n">proxy_req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">AUTHORIZATION</span><span class="p">]</span>
+            <span class="k">del</span> <span class="n">proxy_req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">AUTHORIZATION</span><span class="p">]</span>
+            <span class="n">req</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">PROXY_AUTHORIZATION</span><span class="p">]</span> <span class="o">=</span> <span class="n">auth</span>
+
+        <span class="k">if</span> <span class="n">req</span><span class="o">.</span><span class="n">ssl</span><span class="p">:</span>
+            <span class="c"># For HTTPS requests over HTTP proxy</span>
+            <span class="c"># we must notify proxy to tunnel connection</span>
+            <span class="c"># so we send CONNECT command:</span>
+            <span class="c">#   CONNECT www.python.org:443 HTTP/1.1</span>
+            <span class="c">#   Host: www.python.org</span>
+            <span class="c">#</span>
+            <span class="c"># next we must do TLS handshake and so on</span>
+            <span class="c"># to do this we must wrap raw socket into secure one</span>
+            <span class="c"># asyncio handles this perfectly</span>
+            <span class="n">proxy_req</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_CONNECT</span>
+            <span class="n">proxy_req</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="s">&#39;{}:{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">port</span><span class="p">,</span> <span class="n">req</span><span class="o">.</span><span class="n">ssl</span><span class="p">)</span>
+            <span class="n">conn</span> <span class="o">=</span> <span class="n">Connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">proxy_req</span><span class="p">,</span>
+                              <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_acquired</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">_transport</span><span class="p">)</span>
+            <span class="n">proxy_resp</span> <span class="o">=</span> <span class="n">proxy_req</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">writer</span><span class="p">,</span> <span class="n">conn</span><span class="o">.</span><span class="n">reader</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">proxy_resp</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">proxy_resp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                <span class="k">raise</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">200</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">HttpProxyError</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="n">resp</span><span class="o">.</span><span class="n">status</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">resp</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+                <span class="n">rawsock</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&#39;socket&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">rawsock</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="s">&quot;Transport does not expose socket instance&quot;</span><span class="p">)</span>
+                <span class="n">transport</span><span class="o">.</span><span class="n">pause_reading</span><span class="p">()</span>
+                <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_connection</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_factory</span><span class="p">,</span> <span class="n">ssl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ssl_context</span><span class="p">,</span> <span class="n">sock</span><span class="o">=</span><span class="n">rawsock</span><span class="p">,</span>
+                    <span class="n">server_hostname</span><span class="o">=</span><span class="n">req</span><span class="o">.</span><span class="n">host</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">transport</span><span class="p">,</span> <span class="n">proto</span>
+
+</div>
+<div class="viewcode-block" id="UnixConnector"><a class="viewcode-back" href="../../client_reference.html#aiohttp.UnixConnector">[docs]</a><span class="k">class</span> <span class="nc">UnixConnector</span><span class="p">(</span><span class="n">BaseConnector</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Unix socket connector.</span>
+
+<span class="sd">    :param str path: Unix socket path.</span>
+<span class="sd">    :param args: see :class:`BaseConnector`</span>
+<span class="sd">    :param kwargs: see :class:`BaseConnector`</span>
+
+<span class="sd">    Usage:</span>
+
+<span class="sd">    &gt;&gt;&gt; conn = UnixConnector(path=&#39;/path/to/socket&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; session = ClientSession(connector=conn)</span>
+<span class="sd">    &gt;&gt;&gt; resp = yield from session.get(&#39;http://python.org&#39;)</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Path to unix socket.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_create_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">create_unix_connection</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_factory</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

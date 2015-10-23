@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Contributing &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="CHANGES" href="changes.html" />
+    <link rel="prev" title="Deployment using Gunicorn" href="gunicorn.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/contributing.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "contributing",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "contributing";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="contributing">
+<span id="aiohttp-contributing"></span><h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="instructions-for-contributors">
+<h2>Instructions for contributors<a class="headerlink" href="#instructions-for-contributors" title="Permalink to this headline">¶</a></h2>
+<p>In order to make a clone of the <a class="reference external" href="https://github.com/KeepSafe/aiohttp">GitHub</a> repo: open the link and press the
+&#8220;Fork&#8221; button on the upper-right menu of the web page.</p>
+<p>I hope everybody knows how to work with git and github nowadays :)</p>
+<p>Workflow is pretty straightforward:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>Clone the <a class="reference external" href="https://github.com/KeepSafe/aiohttp">GitHub</a> repo</li>
+<li>Make a change</li>
+<li>Make sure all tests passed</li>
+<li>Commit changes to own aiohttp clone</li>
+<li>Make pull request from github page for your clone</li>
+</ol>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">If your PR has long history or many commits
+please rebase it from main repo before creating PR.</p>
+</div>
+</div></blockquote>
+</div>
+<div class="section" id="preconditions-for-running-aiohttp-test-suite">
+<h2>Preconditions for running aiohttp test suite<a class="headerlink" href="#preconditions-for-running-aiohttp-test-suite" title="Permalink to this headline">¶</a></h2>
+<p>We expect you to use a python virtual environment to run our tests.</p>
+<p>There are several ways to make a virtual environment.</p>
+<p>If you like to use <em>virtualenv</em> please run:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd aiohttp
+$ virtualenv --python=`which python3` venv
+</pre></div>
+</div>
+<p>For standard python <em>venv</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd aiohttp
+$ python3 -m venv venv
+</pre></div>
+</div>
+<p>For <em>virtualenvwrapper</em> (my choice):</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd aiohttp
+$ mkvirtualenv --python=`which python3` aiohttp
+</pre></div>
+</div>
+<p>There are other tools like <em>pyvenv</em> but you know the rule of thumb
+now: create a python3 virtual environment and activate it.</p>
+<p>After that please install libraries required for development:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install -r requirements-dev.txt
+</pre></div>
+</div>
+<p>We also recommend to install <em>ipdb</em> but it&#8217;s on your own:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install ipdb
+</pre></div>
+</div>
+<p>Congratulations, you are ready to run the test suite</p>
+</div>
+<div class="section" id="run-aiohttp-test-suite">
+<h2>Run aiohttp test suite<a class="headerlink" href="#run-aiohttp-test-suite" title="Permalink to this headline">¶</a></h2>
+<p>After all the preconditions are met you can run tests typing the next
+command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ make test
+</pre></div>
+</div>
+<p>The command at first will run the <em>flake8</em> tool (sorry, we don&#8217;t accept
+pull requests with pep8 or pyflakes errors).</p>
+<p>On <em>flake8</em> success the tests will be run.</p>
+<p>Please take a look on the produced output.</p>
+<p>Any extra texts (print statements and so on) should be removed.</p>
+</div>
+<div class="section" id="tests-coverage">
+<h2>Tests coverage<a class="headerlink" href="#tests-coverage" title="Permalink to this headline">¶</a></h2>
+<p>We are trying hard to have good test coverage; please don&#8217;t make it worse.</p>
+<p>Use:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ make cov
+</pre></div>
+</div>
+<p>to run test suite and collect coverage information. Once the command
+has finished check your coverage at the file that appears in the last
+line of the output:
+<code class="docutils literal"><span class="pre">open</span> <span class="pre">file:///.../aiohttp/coverage/index.html</span></code></p>
+<p>Please go to the link and make sure that your code change is covered.</p>
+</div>
+<div class="section" id="documentation">
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h2>
+<p>We encourage documentation improvements.</p>
+<p>Please before making a Pull Request about documentation changes run:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ make doc
+</pre></div>
+</div>
+<p>Once it finishes it will output the index html page
+<code class="docutils literal"><span class="pre">open</span> <span class="pre">file:///.../aiohttp/docs/_build/html/index.html</span></code>..</p>
+<p>Go to the link and make sure your doc changes looks good.</p>
+</div>
+<div class="section" id="the-end">
+<h2>The End<a class="headerlink" href="#the-end" title="Permalink to this headline">¶</a></h2>
+<p>After finishing all steps make a <a class="reference external" href="https://github.com/KeepSafe/aiohttp">GitHub</a> Pull Request, thanks.</p>
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/contributing";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Contributing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#instructions-for-contributors">Instructions for contributors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#preconditions-for-running-aiohttp-test-suite">Preconditions for running aiohttp test suite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#run-aiohttp-test-suite">Run aiohttp test suite</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tests-coverage">Tests coverage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#documentation">Documentation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#the-end">The End</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/contributing.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

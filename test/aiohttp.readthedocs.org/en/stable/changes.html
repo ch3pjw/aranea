@@ -1,0 +1,858 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CHANGES &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="Glossary" href="glossary.html" />
+    <link rel="prev" title="Contributing" href="contributing.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/changes.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "changes",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "changes";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="changes">
+<h1>CHANGES<a class="headerlink" href="#changes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="id1">
+<h2>0.18.2 (22-10-2015)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix regression for OpenSSL &lt; 1.0.0 #583</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>0.18.1 (20-10-2015)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Relax rule for router names: they may contain dots and columns
+starting from now</li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2>0.18.0 (19-10-2015)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<ul>
+<li><p class="first">Use errors.HttpProcessingError.message as HTTP error reason and
+message #459</p>
+</li>
+<li><p class="first">Optimize cythonized multidict a bit</p>
+</li>
+<li><p class="first">Change repr&#8217;s of multidicts and multidict views</p>
+</li>
+<li><p class="first">default headers in ClientSession are now case-insensitive</p>
+</li>
+<li><p class="first">Make &#8216;=&#8217; char and &#8216;wss://&#8217; schema safe in urls #477</p>
+</li>
+<li><p class="first"><cite>ClientResponse.close()</cite> forces connection closing by default from now #479
+N.B. Backward incompatible change: was <cite>.close(force=False)
+Using `force</cite> parameter for the method is deprecated: use <cite>.release()</cite> instead.</p>
+</li>
+<li><p class="first">Properly requote URL&#8217;s path #480</p>
+</li>
+<li><p class="first">add <cite>skip_auto_headers</cite> parameter for client API #486</p>
+</li>
+<li><p class="first">Properly parse URL path in aiohttp.web.Request #489</p>
+</li>
+<li><p class="first">Raise RuntimeError when chunked enabled and HTTP is 1.0 #488</p>
+</li>
+<li><p class="first">Fix a bug with processing io.BytesIO as data parameter for client API #500</p>
+</li>
+<li><p class="first">Skip auto-generation of Content-Type header #507</p>
+</li>
+<li><p class="first">Use sendfile facility for static file handling #503</p>
+</li>
+<li><p class="first">Default <cite>response_factory</cite> in <cite>app.router.add_static</cite> now is
+<cite>StreamResponse</cite>, not <cite>None</cite>. The functionality is not changed if
+default is not specified.</p>
+</li>
+<li><p class="first">Drop <cite>ClientResponse.message</cite> attribute, it was always implementation detail.</p>
+</li>
+<li><p class="first">Streams are optimized for speed and mostly memory in case of a big
+HTTP message sizes #496</p>
+</li>
+<li><p class="first">Fix a bug for server-side cookies for dropping cookie and setting it
+again without Max-Age parameter.</p>
+</li>
+<li><p class="first">Don&#8217;t trim redirect URL in client API #499</p>
+</li>
+<li><p class="first">Extend precision of access log &#8220;D&#8221; to milliseconds #527</p>
+</li>
+<li><p class="first">Deprecate <cite>StreamResponse.start()</cite> method in favor of
+<cite>StreamResponse.prepare()</cite> coroutine #525</p>
+<p><cite>.start()</cite> is still supported but responses begun with <cite>.start()</cite>
+doesn&#8217;t call signal for response preparing to be sent.</p>
+</li>
+<li><p class="first">Add <cite>StreamReader.__repr__</cite></p>
+</li>
+<li><p class="first">Drop Python 3.3 support, from now minimal required version is Python
+3.4.1 #541</p>
+</li>
+<li><p class="first">Add <cite>async with</cite> support for <cite>ClientSession.request()</cite> and family #536</p>
+</li>
+<li><p class="first">Ignore message body on 204 and 304 responses #505</p>
+</li>
+<li><p class="first"><cite>TCPConnector</cite> processed both IPv4 and IPv6 by default #559</p>
+</li>
+<li><p class="first">Add <cite>.routes()</cite> view for urldispatcher #519</p>
+</li>
+<li><p class="first">Route name should be a valid identifier name from now #567</p>
+</li>
+<li><p class="first">Implement server signals #562</p>
+</li>
+<li><p class="first">Drop an year-old deprecated <em>files</em> parameter from client API.</p>
+</li>
+<li><p class="first">Added <cite>async for</cite> support for aiohttp stream #542</p>
+</li>
+</ul>
+</div>
+<div class="section" id="id4">
+<h2>0.17.4 (09-29-2015)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Properly parse URL path in aiohttp.web.Request #489</li>
+<li>Add missing coroutine decorator, the client api is await-compatible now</li>
+</ul>
+</div>
+<div class="section" id="id5">
+<h2>0.17.3 (08-28-2015)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Remove Content-Length header on compressed responses #450</li>
+<li>Support Python 3.5</li>
+<li>Improve performance of transport in-use list #472</li>
+<li>Fix connection pooling #473</li>
+</ul>
+</div>
+<div class="section" id="id6">
+<h2>0.17.2 (08-11-2015)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Don&#8217;t forget to pass <cite>data</cite> argument forward #462</li>
+<li>Fix multipart read bytes count #463</li>
+</ul>
+</div>
+<div class="section" id="id7">
+<h2>0.17.1 (08-10-2015)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix multidict comparsion to arbitrary abc.Mapping</li>
+</ul>
+</div>
+<div class="section" id="id8">
+<h2>0.17.0 (08-04-2015)<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Make StaticRoute support Last-Modified and If-Modified-Since headers #386</li>
+<li>Add Request.if_modified_since and Stream.Response.last_modified properties</li>
+<li>Fix deflate compression when writing a chunked response #395</li>
+<li>Request`s content-length header is cleared now after redirect from
+POST method #391</li>
+<li>Return a 400 if server received a non HTTP content #405</li>
+<li>Fix keep-alive support for aiohttp clients #406</li>
+<li>Allow gzip compression in high-level server response interface #403</li>
+<li>Rename TCPConnector.resolve and family to dns_cache #415</li>
+<li>Make UrlDispatcher ignore quoted characters during url matching #414
+Backward-compatibility warning: this may change the url matched by
+your queries if they send quoted character (like %2F for /) #414</li>
+<li>Use optional cchardet accelerator if present #418</li>
+<li>Borrow loop from Connector in ClientSession if loop is not set</li>
+<li>Add context manager support to ClientSession for session closing.</li>
+<li>Add toplevel get(), post(), put(), head(), delete(), options(),
+patch() coroutines.</li>
+<li>Fix IPv6 support for client API #425</li>
+<li>Pass SSL context through proxy connector #421</li>
+<li>Make the rule: path for add_route should start with slash</li>
+<li>Don&#8217;t process request finishing by low-level server on closed event loop</li>
+<li>Don&#8217;t override data if multiple files are uploaded with same key #433</li>
+<li>Ensure multipart.BodyPartReader.read_chunk read all the necessary data
+to avoid false assertions about malformed multipart payload</li>
+<li>Dont sent body for 204, 205 and 304 http exceptions #442</li>
+<li>Correctly skip Cython compilation in MSVC not found #453</li>
+<li>Add response factory to StaticRoute #456</li>
+<li>Don&#8217;t append trailing CRLF for multipart.BodyPartReader #454</li>
+</ul>
+</div>
+<div class="section" id="id9">
+<h2>0.16.6 (07-15-2015)<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Skip compilation on Windows if vcvarsall.bat cannot be found #438</li>
+</ul>
+</div>
+<div class="section" id="id10">
+<h2>0.16.5 (06-13-2015)<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Get rid of all comprehensions and yielding in _multidict #410</li>
+</ul>
+</div>
+<div class="section" id="id11">
+<h2>0.16.4 (06-13-2015)<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Don&#8217;t clear current exception in multidict&#8217;s <cite>__repr__</cite> (cythonized
+versions) #410</li>
+</ul>
+</div>
+<div class="section" id="id12">
+<h2>0.16.3 (05-30-2015)<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix StaticRoute vulnerability to directory traversal attacks #380</li>
+</ul>
+</div>
+<div class="section" id="id13">
+<h2>0.16.2 (05-27-2015)<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Update python version required for <cite>__del__</cite> usage: it&#8217;s actually
+3.4.1 instead of 3.4.0</li>
+<li>Add check for presence of loop.is_closed() method before call the
+former #378</li>
+</ul>
+</div>
+<div class="section" id="id14">
+<h2>0.16.1 (05-27-2015)<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix regression in static file handling #377</li>
+</ul>
+</div>
+<div class="section" id="id15">
+<h2>0.16.0 (05-26-2015)<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Unset waiter future after cancellation #363</li>
+<li>Update request url with query parameters #372</li>
+<li>Support new <cite>fingerprint</cite> param of TCPConnector to enable verifying
+SSL certificates via MD5, SHA1, or SHA256 digest #366</li>
+<li>Setup uploaded filename if field value is binary and transfer
+encoding is not specified #349</li>
+<li>Implement <cite>ClientSession.close()</cite> method</li>
+<li>Implement <cite>connector.closed</cite> readonly property</li>
+<li>Implement <cite>ClientSession.closed</cite> readonly property</li>
+<li>Implement <cite>ClientSession.connector</cite> readonly property</li>
+<li>Implement <cite>ClientSession.detach</cite> method</li>
+<li>Add <cite>__del__</cite> to client-side objects: sessions, connectors,
+connections, requests, responses.</li>
+<li>Refactor connections cleanup by connector #357</li>
+<li>Add <cite>limit</cite> parameter to connector constructor #358</li>
+<li>Add <cite>request.has_body</cite> property #364</li>
+<li>Add <cite>response_class</cite> parameter to <cite>ws_connect()</cite> #367</li>
+<li><cite>ProxyConnector</cite> doesn&#8217;t support keep-alive requests by default
+starting from now #368</li>
+<li>Add <cite>connector.force_close</cite> property</li>
+<li>Add ws_connect to ClientSession #374</li>
+<li>Support optional <cite>chunk_size</cite> parameter in <cite>router.add_static()</cite></li>
+</ul>
+</div>
+<div class="section" id="id16">
+<h2>0.15.3 (04-22-2015)<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix graceful shutdown handling</li>
+<li>Fix <cite>Expect</cite> header handling for not found and not allowed routes #340</li>
+</ul>
+</div>
+<div class="section" id="id17">
+<h2>0.15.2 (04-19-2015)<a class="headerlink" href="#id17" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Flow control subsystem refactoring</li>
+<li>HTTP server performace optimizations</li>
+<li>Allow to match any request method with <cite>*</cite></li>
+<li>Explicitly call drain on transport #316</li>
+<li>Make chardet module dependency mandatory #318</li>
+<li>Support keep-alive for HTTP 1.0 #325</li>
+<li>Do not chunk single file during upload #327</li>
+<li>Add ClientSession object for cookie storage and default headers #328</li>
+<li>Add <cite>keep_alive_on</cite> argument for HTTP server handler.</li>
+</ul>
+</div>
+<div class="section" id="id18">
+<h2>0.15.1 (03-31-2015)<a class="headerlink" href="#id18" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Pass Autobahn Testsuit tests</li>
+<li>Fixed websocket fragmentation</li>
+<li>Fixed websocket close procedure</li>
+<li>Fixed parser buffer limits</li>
+<li>Added <cite>timeout</cite> parameter to WebSocketResponse ctor</li>
+<li>Added <cite>WebSocketResponse.close_code</cite> attribute</li>
+</ul>
+</div>
+<div class="section" id="id19">
+<h2>0.15.0 (03-27-2015)<a class="headerlink" href="#id19" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Client WebSockets support</li>
+<li>New Multipart system #273</li>
+<li>Support for &#8220;Except&#8221; header #287 #267</li>
+<li>Set default Content-Type for post requests #184</li>
+<li>Fix issue with construction dynamic route with regexps and trailing slash #266</li>
+<li>Add repr to web.Request</li>
+<li>Add repr to web.Response</li>
+<li>Add repr for NotFound and NotAllowed match infos</li>
+<li>Add repr for web.Application</li>
+<li>Add repr to UrlMappingMatchInfo #217</li>
+<li>Gunicorn 19.2.x compatibility</li>
+</ul>
+</div>
+<div class="section" id="id20">
+<h2>0.14.4 (01-29-2015)<a class="headerlink" href="#id20" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix issue with error during constructing of url with regex parts #264</li>
+</ul>
+</div>
+<div class="section" id="id21">
+<h2>0.14.3 (01-28-2015)<a class="headerlink" href="#id21" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Use path=&#8217;/&#8217; by default for cookies #261</li>
+</ul>
+</div>
+<div class="section" id="id22">
+<h2>0.14.2 (01-23-2015)<a class="headerlink" href="#id22" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Connections leak in BaseConnector #253</li>
+<li>Do not swallow websocket reader exceptions #255</li>
+<li>web.Request&#8217;s read, text, json are memorized #250</li>
+</ul>
+</div>
+<div class="section" id="id23">
+<h2>0.14.1 (01-15-2015)<a class="headerlink" href="#id23" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>HttpMessage._add_default_headers does not overwrite existing headers #216</li>
+<li>Expose multidict classes at package level</li>
+<li>add <cite>aiohttp.web.WebSocketResponse</cite></li>
+<li>According to RFC 6455 websocket subprotocol preference order is
+provided by client, not by server</li>
+<li>websocket&#8217;s ping and pong accept optional message parameter</li>
+<li>multidict views do not accept <cite>getall</cite> parameter anymore, it
+returns the full body anyway.</li>
+<li>multidicts have optional Cython optimization, cythonized version of
+multidicts is about 5 times faster than pure Python.</li>
+<li>multidict.getall() returns <cite>list</cite>, not <cite>tuple</cite>.</li>
+<li>Backward imcompatible change: now there are two mutable multidicts
+(<cite>MultiDict</cite>, <cite>CIMultiDict</cite>) and two immutable multidict proxies
+(<cite>MultiDictProxy</cite> and <cite>CIMultiDictProxy</cite>). Previous edition of
+multidicts was not a part of public API BTW.</li>
+<li>Router refactoring to push Not Allowed and Not Found in middleware processing</li>
+<li>Convert <cite>ConnectionError</cite> to <cite>aiohttp.DisconnectedError</cite> and don&#8217;t
+eat <cite>ConnectionError</cite> exceptions from web handlers.</li>
+<li>Remove hop headers from Response class, wsgi response still uses hop headers.</li>
+<li>Allow to send raw chunked encoded response.</li>
+<li>Allow to encode output bytes stream into chunked encoding.</li>
+<li>Allow to compress output bytes stream with <cite>deflate</cite> encoding.</li>
+<li>Server has 75 seconds keepalive timeout now, was non-keepalive by default.</li>
+<li>Application doesn&#8217;t accept <cite>**kwargs</cite> anymore (#243).</li>
+<li>Request is inherited from dict now for making per-request storage to
+middlewares (#242).</li>
+</ul>
+</div>
+<div class="section" id="id24">
+<h2>0.13.1 (12-31-2014)<a class="headerlink" href="#id24" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Add <cite>aiohttp.web.StreamResponse.started</cite> property #213</li>
+<li>Html escape traceback text in <cite>ServerHttpProtocol.handle_error</cite></li>
+<li>Mention handler and middlewares in <cite>aiohttp.web.RequestHandler.handle_request</cite>
+on error (#218)</li>
+</ul>
+</div>
+<div class="section" id="id25">
+<h2>0.13.0 (12-29-2014)<a class="headerlink" href="#id25" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><cite>StreamResponse.charset</cite> converts value to lower-case on assigning.</li>
+<li>Chain exceptions when raise <cite>ClientRequestError</cite>.</li>
+<li>Support custom regexps in route variables #204</li>
+<li>Fixed graceful shutdown, disable keep-alive on connection closing.</li>
+<li>Decode HTTP message with <cite>utf-8</cite> encoding, some servers send headers
+in utf-8 encoding #207</li>
+<li>Support <cite>aiohtt.web</cite> middlewares #209</li>
+<li>Add ssl_context to TCPConnector #206</li>
+</ul>
+</div>
+<div class="section" id="id26">
+<h2>0.12.0 (12-12-2014)<a class="headerlink" href="#id26" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Deep refactoring of <cite>aiohttp.web</cite> in backward-incompatible manner.
+Sorry, we have to do this.</li>
+<li>Automatically force aiohttp.web handlers to coroutines in
+<cite>UrlDispatcher.add_route()</cite> #186</li>
+<li>Rename <cite>Request.POST()</cite> function to <cite>Request.post()</cite></li>
+<li>Added POST attribute</li>
+<li>Response processing refactoring: constructor does&#8217;t accept Request
+instance anymore.</li>
+<li>Pass application instance to finish callback</li>
+<li>Exceptions refactoring</li>
+<li>Do not unquote query string in <cite>aiohttp.web.Request</cite></li>
+<li>Fix concurrent access to payload in <cite>RequestHandle.handle_request()</cite></li>
+<li>Add access logging to <cite>aiohttp.web</cite></li>
+<li>Gunicorn worker for <cite>aiohttp.web</cite></li>
+<li>Removed deprecated <cite>AsyncGunicornWorker</cite></li>
+<li>Removed deprecated HttpClient</li>
+</ul>
+</div>
+<div class="section" id="id27">
+<h2>0.11.0 (11-29-2014)<a class="headerlink" href="#id27" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Support named routes in <cite>aiohttp.web.UrlDispatcher</cite> #179</li>
+<li>Make websocket subprotocols conform to spec #181</li>
+</ul>
+</div>
+<div class="section" id="id28">
+<h2>0.10.2 (11-19-2014)<a class="headerlink" href="#id28" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Don&#8217;t unquote <cite>environ[&#8216;PATH_INFO&#8217;]</cite> in wsgi.py #177</li>
+</ul>
+</div>
+<div class="section" id="id29">
+<h2>0.10.1 (11-17-2014)<a class="headerlink" href="#id29" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>aiohttp.web.HTTPException and descendants now files response body
+with string like <cite>404: NotFound</cite></li>
+<li>Fix multidict <cite>__iter__</cite>, the method should iterate over keys, not
+(key, value) pairs.</li>
+</ul>
+</div>
+<div class="section" id="id30">
+<h2>0.10.0 (11-13-2014)<a class="headerlink" href="#id30" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Add aiohttp.web subpackage for highlevel HTTP server support.</li>
+<li>Add <em>reason</em> optional parameter to aiohttp.protocol.Response ctor.</li>
+<li>Fix aiohttp.client bug for sending file without content-type.</li>
+<li>Change error text for connection closed between server responses
+from &#8216;Can not read status line&#8217; to explicit &#8216;Connection closed by
+server&#8217;</li>
+<li>Drop closed connections from connector #173</li>
+<li>Set server.transport to None on .closing() #172</li>
+</ul>
+</div>
+<div class="section" id="id31">
+<h2>0.9.3 (10-30-2014)<a class="headerlink" href="#id31" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix compatibility with asyncio 3.4.1+ #170</li>
+</ul>
+</div>
+<div class="section" id="id32">
+<h2>0.9.2 (10-16-2014)<a class="headerlink" href="#id32" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Improve redirect handling #157</li>
+<li>Send raw files as is #153</li>
+<li>Better websocket support #150</li>
+</ul>
+</div>
+<div class="section" id="id33">
+<h2>0.9.1 (08-30-2014)<a class="headerlink" href="#id33" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added MultiDict support for client request params and data #114.</li>
+<li>Fixed parameter type for IncompleteRead exception #118.</li>
+<li>Strictly require ASCII headers names and values #137</li>
+<li>Keep port in ProxyConnector #128.</li>
+<li>Python 3.4.1 compatibility #131.</li>
+</ul>
+</div>
+<div class="section" id="id34">
+<h2>0.9.0 (07-08-2014)<a class="headerlink" href="#id34" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Better client basic authentication support #112.</li>
+<li>Fixed incorrect line splitting in HttpRequestParser #97.</li>
+<li>Support StreamReader and DataQueue as request data.</li>
+<li>Client files handling refactoring #20.</li>
+<li>Backward incompatible: Replace DataQueue with StreamReader for
+request payload #87.</li>
+</ul>
+</div>
+<div class="section" id="id35">
+<h2>0.8.4 (07-04-2014)<a class="headerlink" href="#id35" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Change ProxyConnector authorization parameters.</li>
+</ul>
+</div>
+<div class="section" id="id36">
+<h2>0.8.3 (07-03-2014)<a class="headerlink" href="#id36" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Publish TCPConnector properties: verify_ssl, family, resolve, resolved_hosts.</li>
+<li>Don&#8217;t parse message body for HEAD responses.</li>
+<li>Refactor client response decoding.</li>
+</ul>
+</div>
+<div class="section" id="id37">
+<h2>0.8.2 (06-22-2014)<a class="headerlink" href="#id37" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Make ProxyConnector.proxy immutable property.</li>
+<li>Make UnixConnector.path immutable property.</li>
+<li>Fix resource leak for aiohttp.request() with implicit connector.</li>
+<li>Rename Connector&#8217;s reuse_timeout to keepalive_timeout.</li>
+</ul>
+</div>
+<div class="section" id="id38">
+<h2>0.8.1 (06-18-2014)<a class="headerlink" href="#id38" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Use case insensitive multidict for server request/response headers.</li>
+<li>MultiDict.getall() accepts default value.</li>
+<li>Catch server ConnectionError.</li>
+<li>Accept MultiDict (and derived) instances in aiohttp.request header argument.</li>
+<li>Proxy &#8216;CONNECT&#8217; support.</li>
+</ul>
+</div>
+<div class="section" id="id39">
+<h2>0.8.0 (06-06-2014)<a class="headerlink" href="#id39" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Add support for utf-8 values in HTTP headers</li>
+<li>Allow to use custom response class instead of HttpResponse</li>
+<li>Use MultiDict for client request headers</li>
+<li>Use MultiDict for server request/response headers</li>
+<li>Store response headers in ClientResponse.headers attribute</li>
+<li>Get rid of timeout parameter in aiohttp.client API</li>
+<li>Exceptions refactoring</li>
+</ul>
+</div>
+<div class="section" id="id40">
+<h2>0.7.3 (05-20-2014)<a class="headerlink" href="#id40" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Simple HTTP proxy support.</li>
+</ul>
+</div>
+<div class="section" id="id41">
+<h2>0.7.2 (05-14-2014)<a class="headerlink" href="#id41" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Get rid of <cite>__del__</cite> methods</li>
+<li>Use ResourceWarning instead of logging warning record.</li>
+</ul>
+</div>
+<div class="section" id="id42">
+<h2>0.7.1 (04-28-2014)<a class="headerlink" href="#id42" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Do not unquote client request urls.</li>
+<li>Allow multiple waiters on transport drain.</li>
+<li>Do not return client connection to pool in case of exceptions.</li>
+<li>Rename SocketConnector to TCPConnector and UnixSocketConnector to
+UnixConnector.</li>
+</ul>
+</div>
+<div class="section" id="id43">
+<h2>0.7.0 (04-16-2014)<a class="headerlink" href="#id43" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Connection flow control.</li>
+<li>HTTP client session/connection pool refactoring.</li>
+<li>Better handling for bad server requests.</li>
+</ul>
+</div>
+<div class="section" id="id44">
+<h2>0.6.5 (03-29-2014)<a class="headerlink" href="#id44" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added client session reuse timeout.</li>
+<li>Better client request cancellation support.</li>
+<li>Better handling responses without content length.</li>
+<li>Added HttpClient verify_ssl parameter support.</li>
+</ul>
+</div>
+<div class="section" id="id45">
+<h2>0.6.4 (02-27-2014)<a class="headerlink" href="#id45" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Log content-length missing warning only for put and post requests.</li>
+</ul>
+</div>
+<div class="section" id="id46">
+<h2>0.6.3 (02-27-2014)<a class="headerlink" href="#id46" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Better support for server exit.</li>
+<li>Read response body until EOF if content-length is not defined #14</li>
+</ul>
+</div>
+<div class="section" id="id47">
+<h2>0.6.2 (02-18-2014)<a class="headerlink" href="#id47" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix trailing char in allowed_methods.</li>
+<li>Start slow request timer for first request.</li>
+</ul>
+</div>
+<div class="section" id="id48">
+<h2>0.6.1 (02-17-2014)<a class="headerlink" href="#id48" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added utility method HttpResponse.read_and_close()</li>
+<li>Added slow request timeout.</li>
+<li>Enable socket SO_KEEPALIVE if available.</li>
+</ul>
+</div>
+<div class="section" id="id49">
+<h2>0.6.0 (02-12-2014)<a class="headerlink" href="#id49" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Better handling for process exit.</li>
+</ul>
+</div>
+<div class="section" id="id50">
+<h2>0.5.0 (01-29-2014)<a class="headerlink" href="#id50" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Allow to use custom HttpRequest client class.</li>
+<li>Use gunicorn keepalive setting for asynchronous worker.</li>
+<li>Log leaking responses.</li>
+<li>python 3.4 compatibility</li>
+</ul>
+</div>
+<div class="section" id="id51">
+<h2>0.4.4 (11-15-2013)<a class="headerlink" href="#id51" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Resolve only AF_INET family, because it is not clear how to pass
+extra info to asyncio.</li>
+</ul>
+</div>
+<div class="section" id="id52">
+<h2>0.4.3 (11-15-2013)<a class="headerlink" href="#id52" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Allow to wait completion of request with <cite>HttpResponse.wait_for_close()</cite></li>
+</ul>
+</div>
+<div class="section" id="id53">
+<h2>0.4.2 (11-14-2013)<a class="headerlink" href="#id53" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Handle exception in client request stream.</li>
+<li>Prevent host resolving for each client request.</li>
+</ul>
+</div>
+<div class="section" id="id54">
+<h2>0.4.1 (11-12-2013)<a class="headerlink" href="#id54" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added client support for <cite>expect: 100-continue</cite> header.</li>
+</ul>
+</div>
+<div class="section" id="id55">
+<h2>0.4 (11-06-2013)<a class="headerlink" href="#id55" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added custom wsgi application close procedure</li>
+<li>Fixed concurrent host failure in HttpClient</li>
+</ul>
+</div>
+<div class="section" id="id56">
+<h2>0.3 (11-04-2013)<a class="headerlink" href="#id56" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added PortMapperWorker</li>
+<li>Added HttpClient</li>
+<li>Added TCP connection timeout to HTTP client</li>
+<li>Better client connection errors handling</li>
+<li>Gracefully handle process exit</li>
+</ul>
+</div>
+<div class="section" id="id57">
+<h2>0.2<a class="headerlink" href="#id57" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Fix packaging</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">CHANGES</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#id1">0.18.2 (22-10-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">0.18.1 (20-10-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id3">0.18.0 (19-10-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id4">0.17.4 (09-29-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id5">0.17.3 (08-28-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id6">0.17.2 (08-11-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id7">0.17.1 (08-10-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id8">0.17.0 (08-04-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id9">0.16.6 (07-15-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id10">0.16.5 (06-13-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id11">0.16.4 (06-13-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id12">0.16.3 (05-30-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id13">0.16.2 (05-27-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id14">0.16.1 (05-27-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id15">0.16.0 (05-26-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id16">0.15.3 (04-22-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id17">0.15.2 (04-19-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id18">0.15.1 (03-31-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id19">0.15.0 (03-27-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id20">0.14.4 (01-29-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id21">0.14.3 (01-28-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id22">0.14.2 (01-23-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id23">0.14.1 (01-15-2015)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id24">0.13.1 (12-31-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id25">0.13.0 (12-29-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id26">0.12.0 (12-12-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id27">0.11.0 (11-29-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id28">0.10.2 (11-19-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id29">0.10.1 (11-17-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id30">0.10.0 (11-13-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id31">0.9.3 (10-30-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id32">0.9.2 (10-16-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id33">0.9.1 (08-30-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id34">0.9.0 (07-08-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id35">0.8.4 (07-04-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id36">0.8.3 (07-03-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id37">0.8.2 (06-22-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id38">0.8.1 (06-18-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id39">0.8.0 (06-06-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id40">0.7.3 (05-20-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id41">0.7.2 (05-14-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id42">0.7.1 (04-28-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id43">0.7.0 (04-16-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id44">0.6.5 (03-29-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id45">0.6.4 (02-27-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id46">0.6.3 (02-27-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id47">0.6.2 (02-18-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id48">0.6.1 (02-17-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id49">0.6.0 (02-12-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id50">0.5.0 (01-29-2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id51">0.4.4 (11-15-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id52">0.4.3 (11-15-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id53">0.4.2 (11-14-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id54">0.4.1 (11-12-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id55">0.4 (11-06-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id56">0.3 (11-04-2013)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#id57">0.2</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/changes.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

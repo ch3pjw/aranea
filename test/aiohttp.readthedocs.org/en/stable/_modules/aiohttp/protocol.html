@@ -1,0 +1,1045 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.protocol &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/protocol.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/protocol",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/protocol";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.protocol</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Http related parsers and protocol.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">http.server</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">zlib</span>
+<span class="kn">from</span> <span class="nn">wsgiref.handlers</span> <span class="kn">import</span> <span class="n">format_date_time</span>
+
+<span class="kn">import</span> <span class="nn">aiohttp</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">errors</span><span class="p">,</span> <span class="n">hdrs</span>
+<span class="kn">from</span> <span class="nn">.multidict</span> <span class="kn">import</span> <span class="n">CIMultiDict</span><span class="p">,</span> <span class="n">upstr</span>
+<span class="kn">from</span> <span class="nn">.log</span> <span class="kn">import</span> <span class="n">internal_logger</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;HttpMessage&#39;</span><span class="p">,</span> <span class="s">&#39;Request&#39;</span><span class="p">,</span> <span class="s">&#39;Response&#39;</span><span class="p">,</span>
+           <span class="s">&#39;HttpVersion&#39;</span><span class="p">,</span> <span class="s">&#39;HttpVersion10&#39;</span><span class="p">,</span> <span class="s">&#39;HttpVersion11&#39;</span><span class="p">,</span>
+           <span class="s">&#39;RawRequestMessage&#39;</span><span class="p">,</span> <span class="s">&#39;RawResponseMessage&#39;</span><span class="p">,</span>
+           <span class="s">&#39;HttpPrefixParser&#39;</span><span class="p">,</span> <span class="s">&#39;HttpRequestParser&#39;</span><span class="p">,</span> <span class="s">&#39;HttpResponseParser&#39;</span><span class="p">,</span>
+           <span class="s">&#39;HttpPayloadParser&#39;</span><span class="p">)</span>
+
+<span class="n">ASCIISET</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">printable</span><span class="p">)</span>
+<span class="n">METHRE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;[A-Z0-9$-_.]+&#39;</span><span class="p">)</span>
+<span class="n">VERSRE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;HTTP/(\d+).(\d+)&#39;</span><span class="p">)</span>
+<span class="n">HDRRE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;[</span><span class="se">\x00</span><span class="s">-</span><span class="se">\x1F\x7F</span><span class="s">()&lt;&gt;@,;:\[\]={} </span><span class="se">\t\\\\\&quot;</span><span class="s">]&#39;</span><span class="p">)</span>
+<span class="n">CONTINUATION</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="s">&#39;</span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span>
+<span class="n">EOF_MARKER</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">EOL_MARKER</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+<span class="n">STATUS_LINE_READY</span> <span class="o">=</span> <span class="nb">object</span><span class="p">()</span>
+
+<span class="n">RESPONSES</span> <span class="o">=</span> <span class="n">http</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">BaseHTTPRequestHandler</span><span class="o">.</span><span class="n">responses</span>
+
+<span class="n">HttpVersion</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s">&#39;HttpVersion&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;major&#39;</span><span class="p">,</span> <span class="s">&#39;minor&#39;</span><span class="p">])</span>
+<span class="n">HttpVersion10</span> <span class="o">=</span> <span class="n">HttpVersion</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="n">HttpVersion11</span> <span class="o">=</span> <span class="n">HttpVersion</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+<span class="n">RawStatusLineMessage</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s">&#39;RawStatusLineMessage&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">,</span> <span class="s">&#39;version&#39;</span><span class="p">])</span>
+
+<span class="n">RawRequestMessage</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s">&#39;RawRequestMessage&#39;</span><span class="p">,</span>
+    <span class="p">[</span><span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;path&#39;</span><span class="p">,</span> <span class="s">&#39;version&#39;</span><span class="p">,</span> <span class="s">&#39;headers&#39;</span><span class="p">,</span> <span class="s">&#39;should_close&#39;</span><span class="p">,</span> <span class="s">&#39;compression&#39;</span><span class="p">])</span>
+
+
+<span class="n">RawResponseMessage</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+    <span class="s">&#39;RawResponseMessage&#39;</span><span class="p">,</span>
+    <span class="p">[</span><span class="s">&#39;version&#39;</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="s">&#39;reason&#39;</span><span class="p">,</span> <span class="s">&#39;headers&#39;</span><span class="p">,</span> <span class="s">&#39;should_close&#39;</span><span class="p">,</span> <span class="s">&#39;compression&#39;</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">HttpParser</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_line_size</span><span class="o">=</span><span class="mi">8190</span><span class="p">,</span> <span class="n">max_headers</span><span class="o">=</span><span class="mi">32768</span><span class="p">,</span>
+                 <span class="n">max_field_size</span><span class="o">=</span><span class="mi">8190</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_line_size</span> <span class="o">=</span> <span class="n">max_line_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_headers</span> <span class="o">=</span> <span class="n">max_headers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_field_size</span> <span class="o">=</span> <span class="n">max_field_size</span>
+
+    <span class="k">def</span> <span class="nf">parse_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lines</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parses RFC2822 headers from a stream.</span>
+
+<span class="sd">        Line continuations are supported. Returns list of header name</span>
+<span class="sd">        and value pairs. Header name is in upper case.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">close_conn</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">encoding</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">()</span>
+
+        <span class="n">lines_idx</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">while</span> <span class="n">line</span><span class="p">:</span>
+            <span class="n">header_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+            <span class="c"># Parse initial header name : value pair.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">InvalidHeader</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s">&#39; </span><span class="se">\t</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">HDRRE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">InvalidHeader</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+            <span class="c"># next line</span>
+            <span class="n">lines_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">lines_idx</span><span class="p">]</span>
+
+            <span class="c"># consume continuation lines</span>
+            <span class="n">continuation</span> <span class="o">=</span> <span class="n">line</span> <span class="ow">and</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">CONTINUATION</span>
+
+            <span class="k">if</span> <span class="n">continuation</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">value</span><span class="p">]</span>
+                <span class="k">while</span> <span class="n">continuation</span><span class="p">:</span>
+                    <span class="n">header_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">header_length</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_field_size</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineTooLong</span><span class="p">(</span>
+                            <span class="s">&#39;limit request headers fields size&#39;</span><span class="p">)</span>
+                    <span class="n">value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+                    <span class="c"># next line</span>
+                    <span class="n">lines_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="n">lines_idx</span><span class="p">]</span>
+                    <span class="n">continuation</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">CONTINUATION</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">header_length</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_field_size</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineTooLong</span><span class="p">(</span>
+                        <span class="s">&#39;limit request headers fields size&#39;</span><span class="p">)</span>
+
+            <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+            <span class="c"># keep-alive and encoding</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">:</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s">&#39;close&#39;</span><span class="p">:</span>
+                    <span class="n">close_conn</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">elif</span> <span class="n">v</span> <span class="o">==</span> <span class="s">&#39;keep-alive&#39;</span><span class="p">:</span>
+                    <span class="n">close_conn</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_ENCODING</span><span class="p">:</span>
+                <span class="n">enc</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">enc</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;gzip&#39;</span><span class="p">,</span> <span class="s">&#39;deflate&#39;</span><span class="p">):</span>
+                    <span class="n">encoding</span> <span class="o">=</span> <span class="n">enc</span>
+
+            <span class="n">headers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">headers</span><span class="p">,</span> <span class="n">close_conn</span><span class="p">,</span> <span class="n">encoding</span>
+
+
+<div class="viewcode-block" id="HttpPrefixParser"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpPrefixParser">[docs]</a><span class="k">class</span> <span class="nc">HttpPrefixParser</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Waits for &#39;HTTP&#39; prefix (non destructive)&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">allowed_methods</span><span class="o">=</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allowed_methods</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">allowed_methods</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="n">raw_data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">waituntil</span><span class="p">(</span><span class="n">b</span><span class="s">&#39; &#39;</span><span class="p">,</span> <span class="mi">12</span><span class="p">)</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">raw_data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">,</span> <span class="s">&#39;surrogateescape&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="c"># method</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">METHRE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c"># allowed method</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_methods</span> <span class="ow">and</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">allowed_methods</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpMethodNotAllowed</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="HttpRequestParser"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpRequestParser">[docs]</a><span class="k">class</span> <span class="nc">HttpRequestParser</span><span class="p">(</span><span class="n">HttpParser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read request status line. Exception errors.BadStatusLine</span>
+<span class="sd">    could be raised in case of any errors in status line.</span>
+<span class="sd">    Returns RawRequestMessage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="c"># read http message (request line + headers)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw_data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span>
+                <span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n\r\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_headers</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineTooLong</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">raw_data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+            <span class="s">&#39;utf-8&#39;</span><span class="p">,</span> <span class="s">&#39;surrogateescape&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+        <span class="c"># request line</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+        <span class="c"># method</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">METHRE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c"># version</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">version</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;HTTP/&#39;</span><span class="p">):</span>
+                <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span> <span class="o">=</span> <span class="n">version</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="n">version</span> <span class="o">=</span> <span class="n">HttpVersion</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">n1</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">n2</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+
+        <span class="c"># read headers</span>
+        <span class="n">headers</span><span class="p">,</span> <span class="n">close</span><span class="p">,</span> <span class="n">compression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_headers</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">close</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>  <span class="c"># then the headers weren&#39;t set in the request</span>
+            <span class="k">if</span> <span class="n">version</span> <span class="o">&lt;=</span> <span class="n">HttpVersion10</span><span class="p">:</span>  <span class="c"># HTTP 1.0 must asks to not close</span>
+                <span class="n">close</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>  <span class="c"># HTTP 1.1 must ask to close.</span>
+                <span class="n">close</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span>
+            <span class="n">RawRequestMessage</span><span class="p">(</span>
+                <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">close</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">raw_data</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="HttpResponseParser"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpResponseParser">[docs]</a><span class="k">class</span> <span class="nc">HttpResponseParser</span><span class="p">(</span><span class="n">HttpParser</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read response status line and headers.</span>
+
+<span class="sd">    BadStatusLine could be raised in case of any errors in status line.</span>
+<span class="sd">    Returns RawResponseMessage&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="c"># read http message (response line + headers)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw_data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span>
+                <span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n\r\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_line_size</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_headers</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineTooLong</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">limit</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+        <span class="n">lines</span> <span class="o">=</span> <span class="n">raw_data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span>
+            <span class="s">&#39;utf-8&#39;</span><span class="p">,</span> <span class="s">&#39;surrogateescape&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">)</span>
+
+        <span class="n">line</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">version</span><span class="p">,</span> <span class="n">status</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">status</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="n">reason</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+        <span class="c"># version</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">VERSRE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">HttpVersion</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)),</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+
+        <span class="c"># The status code is a three-digit number</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="n">status</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="ow">or</span> <span class="n">status</span> <span class="o">&gt;</span> <span class="mi">999</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">BadStatusLine</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+
+        <span class="c"># read headers</span>
+        <span class="n">headers</span><span class="p">,</span> <span class="n">close</span><span class="p">,</span> <span class="n">compression</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_headers</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">close</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">close</span> <span class="o">=</span> <span class="n">version</span> <span class="o">&lt;=</span> <span class="n">HttpVersion10</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span>
+            <span class="n">RawResponseMessage</span><span class="p">(</span>
+                <span class="n">version</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+                <span class="n">headers</span><span class="p">,</span> <span class="n">close</span><span class="p">,</span> <span class="n">compression</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">raw_data</span><span class="p">))</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="HttpPayloadParser"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpPayloadParser">[docs]</a><span class="k">class</span> <span class="nc">HttpPayloadParser</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">compression</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                 <span class="n">readall</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">response_with_body</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="o">=</span> <span class="n">compression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">readall</span> <span class="o">=</span> <span class="n">readall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">response_with_body</span> <span class="o">=</span> <span class="n">response_with_body</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="c"># payload params</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_KEY1</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="mi">8</span>
+
+        <span class="c"># payload decompression wrapper</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">compression</span><span class="p">:</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="n">DeflateBuffer</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">compression</span><span class="p">)</span>
+
+        <span class="c"># payload parser</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_with_body</span><span class="p">:</span>
+            <span class="c"># don&#39;t parse payload if it&#39;s not expected to be received</span>
+            <span class="k">pass</span>
+
+        <span class="k">elif</span> <span class="s">&#39;chunked&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                <span class="n">hdrs</span><span class="o">.</span><span class="n">TRANSFER_ENCODING</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_chunked_payload</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">InvalidHeader</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">InvalidHeader</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_length_payload</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">readall</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">204</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_eof_payload</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;PUT&#39;</span><span class="p">,</span> <span class="s">&#39;POST&#39;</span><span class="p">):</span>
+                <span class="n">internal_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>  <span class="c"># pragma: no cover</span>
+                    <span class="s">&#39;Content-Length or Transfer-Encoding header is required&#39;</span><span class="p">)</span>
+
+        <span class="n">out</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+<div class="viewcode-block" id="HttpPayloadParser.parse_chunked_payload"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpPayloadParser.parse_chunked_payload">[docs]</a>    <span class="k">def</span> <span class="nf">parse_chunked_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Chunked transfer encoding parser.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="c"># read next chunk size</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readuntil</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">,</span> <span class="mi">8192</span><span class="p">)</span>
+
+            <span class="n">i</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;;&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="p">[:</span><span class="n">i</span><span class="p">]</span>  <span class="c"># strip chunk-extensions</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">TransferEncodingError</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="kn">from</span> <span class="bp">None</span>
+
+            <span class="k">if</span> <span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># eof marker</span>
+                <span class="k">break</span>
+
+            <span class="c"># read chunk and feed buffer</span>
+            <span class="k">while</span> <span class="n">size</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readsome</span><span class="p">(</span><span class="n">size</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+                <span class="n">size</span> <span class="o">=</span> <span class="n">size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+            <span class="c"># toss the CRLF at the end of the chunk</span>
+            <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">skip</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="c"># read and discard trailer up to the CRLF terminator</span>
+        <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">skipuntil</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HttpPayloadParser.parse_length_payload"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpPayloadParser.parse_length_payload">[docs]</a>    <span class="k">def</span> <span class="nf">parse_length_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read specified amount of bytes.&quot;&quot;&quot;</span>
+        <span class="n">required</span> <span class="o">=</span> <span class="n">length</span>
+        <span class="k">while</span> <span class="n">required</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readsome</span><span class="p">(</span><span class="n">required</span><span class="p">)</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+            <span class="n">required</span> <span class="o">-=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HttpPayloadParser.parse_eof_payload"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpPayloadParser.parse_eof_payload">[docs]</a>    <span class="k">def</span> <span class="nf">parse_eof_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Read all bytes until eof.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">readsome</span><span class="p">()</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">EofStream</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+</div></div>
+<span class="k">class</span> <span class="nc">DeflateBuffer</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;DeflateStream decompress stream and feed data into specified stream.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">encoding</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="n">zlib_mode</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span> <span class="o">+</span> <span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span>
+                     <span class="k">if</span> <span class="n">encoding</span> <span class="o">==</span> <span class="s">&#39;gzip&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">zlib</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompressobj</span><span class="p">(</span><span class="n">wbits</span><span class="o">=</span><span class="n">zlib_mode</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">feed_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">ContentEncodingError</span><span class="p">(</span><span class="s">&#39;deflate&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">feed_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">zlib</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">zlib</span><span class="o">.</span><span class="n">eof</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">ContentEncodingError</span><span class="p">(</span><span class="s">&#39;deflate&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">feed_eof</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">wrap_payload_filter</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Wraps payload filter and piped filters.</span>
+
+<span class="sd">    Filter is a generator that accepts arbitrary chunks of data,</span>
+<span class="sd">    modify data and emit new stream of data.</span>
+
+<span class="sd">    For example we have stream of chunks: [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;],</span>
+<span class="sd">    we can apply chunking filter to this stream:</span>
+
+<span class="sd">    [&#39;1&#39;, &#39;2&#39;, &#39;3&#39;, &#39;4&#39;, &#39;5&#39;]</span>
+<span class="sd">      |</span>
+<span class="sd">    response.add_chunking_filter(2)</span>
+<span class="sd">      |</span>
+<span class="sd">    [&#39;12&#39;, &#39;34&#39;, &#39;5&#39;]</span>
+
+<span class="sd">    It is possible to use different filters at the same time.</span>
+
+<span class="sd">    For a example to compress incoming stream with &#39;deflate&#39; encoding</span>
+<span class="sd">    and then split data and emit chunks of 8192 bytes size chunks:</span>
+
+<span class="sd">      &gt;&gt;&gt; response.add_compression_filter(&#39;deflate&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; response.add_chunking_filter(8192)</span>
+
+<span class="sd">    Filters do not alter transfer encoding.</span>
+
+<span class="sd">    Filter can receive types types of data, bytes object or EOF_MARKER.</span>
+
+<span class="sd">      1. If filter receives bytes object, it should process data</span>
+<span class="sd">         and yield processed data then yield EOL_MARKER object.</span>
+<span class="sd">      2. If Filter received EOF_MARKER, it should yield remaining</span>
+<span class="sd">         data (buffered) and then yield EOF_MARKER.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@functools.wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">new_filter</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+        <span class="nb">filter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span>
+        <span class="k">if</span> <span class="nb">filter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="nb">next</span><span class="p">(</span><span class="n">new_filter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">filter_pipe</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">new_filter</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filter</span> <span class="o">=</span> <span class="n">new_filter</span>
+
+        <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">filter_pipe</span><span class="p">(</span><span class="nb">filter</span><span class="p">,</span> <span class="n">filter2</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                <span class="n">EOF_MARKER</span><span class="o">=</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="o">=</span><span class="n">EOL_MARKER</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates pipe between two filters.</span>
+
+<span class="sd">    filter_pipe() feeds first filter with incoming data and then</span>
+<span class="sd">    send yielded from first filter data into filter2, results of</span>
+<span class="sd">    filter2 are being emitted.</span>
+
+<span class="sd">      1. If filter_pipe receives bytes object, it sends it to the first filter.</span>
+<span class="sd">      2. Reads yielded values from the first filter until it receives</span>
+<span class="sd">         EOF_MARKER or EOL_MARKER.</span>
+<span class="sd">      3. Each of this values is being send to second filter.</span>
+<span class="sd">      4. Reads yielded values from second filter until it receives EOF_MARKER</span>
+<span class="sd">         or EOL_MARKER. Each of this values yields to writer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">eof</span> <span class="o">=</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="n">EOF_MARKER</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">EOL_MARKER</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="n">filter2</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+            <span class="k">while</span> <span class="n">chunk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="n">chunk</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">filter2</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">EOF_MARKER</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">eof</span><span class="p">:</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="n">EOF_MARKER</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">break</span>
+
+        <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">EOL_MARKER</span>
+
+
+<div class="viewcode-block" id="HttpMessage"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage">[docs]</a><span class="k">class</span> <span class="nc">HttpMessage</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;HttpMessage allows to write headers and payload to a stream.</span>
+
+<span class="sd">    For example, lets say we want to read file then compress it with deflate</span>
+<span class="sd">    compression and then send it with chunked transfer encoding, code may look</span>
+<span class="sd">    like this:</span>
+
+<span class="sd">       &gt;&gt;&gt; response = aiohttp.Response(transport, 200)</span>
+
+<span class="sd">    We have to use deflate compression first:</span>
+
+<span class="sd">      &gt;&gt;&gt; response.add_compression_filter(&#39;deflate&#39;)</span>
+
+<span class="sd">    Then we want to split output stream into chunks of 1024 bytes size:</span>
+
+<span class="sd">      &gt;&gt;&gt; response.add_chunking_filter(1024)</span>
+
+<span class="sd">    We can add headers to response with add_headers() method. add_headers()</span>
+<span class="sd">    does not send data to transport, send_headers() sends request/response</span>
+<span class="sd">    line and then sends headers:</span>
+
+<span class="sd">      &gt;&gt;&gt; response.add_headers(</span>
+<span class="sd">      ...     (&#39;Content-Disposition&#39;, &#39;attachment; filename=&quot;...&quot;&#39;))</span>
+<span class="sd">      &gt;&gt;&gt; response.send_headers()</span>
+
+<span class="sd">    Now we can use chunked writer to write stream to a network stream.</span>
+<span class="sd">    First call to write() method sends response status line and headers,</span>
+<span class="sd">    add_header() and add_headers() method unavailable at this stage:</span>
+
+<span class="sd">    &gt;&gt;&gt; with open(&#39;...&#39;, &#39;rb&#39;) as f:</span>
+<span class="sd">    ...     chunk = fp.read(8192)</span>
+<span class="sd">    ...     while chunk:</span>
+<span class="sd">    ...         response.write(chunk)</span>
+<span class="sd">    ...         chunk = fp.read(8192)</span>
+
+<span class="sd">    &gt;&gt;&gt; response.write_eof()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">writer</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="c"># &#39;filter&#39; is being used for altering write() behaviour,</span>
+    <span class="c"># add_chunking_filter adds deflate/gzip compression and</span>
+    <span class="c"># add_compression_filter splits incoming data into a chunks.</span>
+    <span class="nb">filter</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="n">HOP_HEADERS</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># Must be set by subclass.</span>
+
+    <span class="n">SERVER_SOFTWARE</span> <span class="o">=</span> <span class="s">&#39;Python/{0[0]}.{0[1]} aiohttp/{1}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span><span class="p">,</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">status_line</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span>
+    <span class="n">upgrade</span> <span class="o">=</span> <span class="bp">False</span>  <span class="c"># Connection: UPGRADE</span>
+    <span class="n">websocket</span> <span class="o">=</span> <span class="bp">False</span>  <span class="c"># Upgrade: WEBSOCKET</span>
+    <span class="n">has_chunked_hdr</span> <span class="o">=</span> <span class="bp">False</span>  <span class="c"># Transfer-encoding: chunked</span>
+
+    <span class="c"># subclass can enable auto sending headers with write() call,</span>
+    <span class="c"># this is useful for wsgi&#39;s start_response implementation.</span>
+    <span class="n">_send_headers</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">version</span><span class="p">,</span> <span class="n">close</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="n">transport</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">=</span> <span class="n">version</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closing</span> <span class="o">=</span> <span class="n">close</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunked</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_size</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="HttpMessage.force_close"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.force_close">[docs]</a>    <span class="k">def</span> <span class="nf">force_close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">closing</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.enable_chunked_encoding"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.enable_chunked_encoding">[docs]</a>    <span class="k">def</span> <span class="nf">enable_chunked_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunked</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.keep_alive"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.keep_alive">[docs]</a>    <span class="k">def</span> <span class="nf">keep_alive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">&lt;</span> <span class="n">HttpVersion10</span><span class="p">:</span>
+                <span class="c"># keep alive not supported at all</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="n">HttpVersion10</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">)</span> <span class="o">==</span> <span class="s">&#39;keep-alive&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">True</span>
+                <span class="k">else</span><span class="p">:</span>  <span class="c"># no headers means we close for Http 1.0</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">closing</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.is_headers_sent"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.is_headers_sent">[docs]</a>    <span class="k">def</span> <span class="nf">is_headers_sent</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.add_header"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.add_header">[docs]</a>    <span class="k">def</span> <span class="nf">add_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Analyze headers. Calculate content length,</span>
+<span class="sd">        removes hop headers, etc.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span><span class="p">,</span> <span class="s">&#39;headers have been sent already&#39;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> \
+            <span class="s">&#39;Header name should be a string, got {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">ASCIISET</span><span class="p">),</span> \
+            <span class="s">&#39;Header name should contain ASCII chars, got {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span> \
+            <span class="s">&#39;Header {!r} should have string value, got {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">upstr</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">TRANSFER_ENCODING</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_chunked_hdr</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;chunked&#39;</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="c"># handle websocket</span>
+            <span class="k">if</span> <span class="s">&#39;upgrade&#39;</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">upgrade</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="c"># connection keep-alive</span>
+            <span class="k">elif</span> <span class="s">&#39;close&#39;</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">elif</span> <span class="s">&#39;keep-alive&#39;</span> <span class="ow">in</span> <span class="n">val</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s">&#39;websocket&#39;</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">websocket</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+        <span class="k">elif</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">HOP_HEADERS</span><span class="p">:</span>
+            <span class="c"># ignore hop-by-hop headers</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.add_headers"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.add_headers">[docs]</a>    <span class="k">def</span> <span class="nf">add_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">headers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds headers to a http message.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_header</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.send_headers"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.send_headers">[docs]</a>    <span class="k">def</span> <span class="nf">send_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_sep</span><span class="o">=</span><span class="s">&#39;: &#39;</span><span class="p">,</span> <span class="n">_end</span><span class="o">=</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes headers to a stream. Constructs payload writer.&quot;&quot;&quot;</span>
+        <span class="c"># Chunked response is only for HTTP/1.1 clients or newer</span>
+        <span class="c"># and there is no Content-Length header is set.</span>
+        <span class="c"># Do not use chunked responses when the response is guaranteed to</span>
+        <span class="c"># not have a response body (304, 204).</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span><span class="p">,</span> <span class="s">&#39;headers have been sent already&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunked</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">and</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">version</span> <span class="o">&gt;=</span> <span class="n">HttpVersion11</span> <span class="ow">and</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">304</span><span class="p">,</span> <span class="mi">204</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_chunked_payload</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">TRANSFER_ENCODING</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;chunked&#39;</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_length_payload</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_write_eof_payload</span><span class="p">()</span>
+
+        <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_add_default_headers</span><span class="p">()</span>
+
+        <span class="c"># status + headers</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">status_line</span><span class="p">,),</span>
+            <span class="o">*</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">_sep</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">_end</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_add_default_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># set the connection header</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">upgrade</span><span class="p">:</span>
+            <span class="n">connection</span> <span class="o">=</span> <span class="s">&#39;upgrade&#39;</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">closing</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">keepalive</span><span class="p">:</span>
+            <span class="n">connection</span> <span class="o">=</span> <span class="s">&#39;keep-alive&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">connection</span> <span class="o">=</span> <span class="s">&#39;close&#39;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">]</span> <span class="o">=</span> <span class="n">connection</span>
+
+<div class="viewcode-block" id="HttpMessage.write"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+              <span class="n">drain</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">EOF_MARKER</span><span class="o">=</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="o">=</span><span class="n">EOL_MARKER</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Writes chunk of data to a stream by using different writers.</span>
+
+<span class="sd">        writer uses filter to modify chunk of data.</span>
+<span class="sd">        write_eof() indicates end of stream.</span>
+<span class="sd">        writer can&#39;t be used after write_eof() method being called.</span>
+<span class="sd">        write() return drain future.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="p">(</span><span class="nb">bytes</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">))</span> <span class="ow">or</span>
+                <span class="n">chunk</span> <span class="ow">is</span> <span class="n">EOF_MARKER</span><span class="p">),</span> <span class="n">chunk</span>
+
+        <span class="n">size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_headers</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers_sent</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">send_headers</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">,</span> <span class="s">&#39;send_headers() is not called.&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">:</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="k">while</span> <span class="n">chunk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">EOF_MARKER</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_output_size</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">-</span> <span class="n">size</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_size</span> <span class="o">&gt;</span> <span class="mi">64</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">drain</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_output_size</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="p">()</span>
+</div>
+<div class="viewcode-block" id="HttpMessage.write_eof"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.write_eof">[docs]</a>    <span class="k">def</span> <span class="nf">write_eof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">EOF_MARKER</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">EofStream</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_write_chunked_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write data in chunked transfer encoding.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+            <span class="k">except</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">EofStream</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;0</span><span class="se">\r\n\r\n</span><span class="s">&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="mi">5</span>
+                <span class="k">break</span>
+
+            <span class="n">chunk</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="n">chunk_len</span> <span class="o">=</span> <span class="s">&#39;{:x}</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;ascii&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk_len</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk_len</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span> <span class="o">+</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="nf">_write_length_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write specified number of bytes to a stream.&quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+            <span class="k">except</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">EofStream</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="k">if</span> <span class="n">length</span><span class="p">:</span>
+                <span class="n">l</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;=</span> <span class="n">l</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="n">l</span>
+                    <span class="n">length</span> <span class="o">=</span> <span class="n">length</span><span class="o">-</span><span class="n">l</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">[:</span><span class="n">length</span><span class="p">])</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="n">length</span>
+                    <span class="n">length</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_write_eof_payload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+            <span class="k">except</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">EofStream</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+    <span class="nd">@wrap_payload_filter</span>
+<div class="viewcode-block" id="HttpMessage.add_chunking_filter"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.add_chunking_filter">[docs]</a>    <span class="k">def</span> <span class="nf">add_chunking_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">16</span><span class="o">*</span><span class="mi">1024</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                            <span class="n">EOF_MARKER</span><span class="o">=</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="o">=</span><span class="n">EOL_MARKER</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Split incoming stream into chunks.&quot;&quot;&quot;</span>
+        <span class="n">buf</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+        <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="n">EOF_MARKER</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">buf</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">buf</span>
+
+                <span class="k">yield</span> <span class="n">EOF_MARKER</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">buf</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+                <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">chunk_size</span><span class="p">:</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">buf</span><span class="p">[:</span><span class="n">chunk_size</span><span class="p">])</span>
+                    <span class="k">del</span> <span class="n">buf</span><span class="p">[:</span><span class="n">chunk_size</span><span class="p">]</span>
+                    <span class="k">yield</span> <span class="n">chunk</span>
+
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">EOL_MARKER</span>
+</div>
+    <span class="nd">@wrap_payload_filter</span>
+<div class="viewcode-block" id="HttpMessage.add_compression_filter"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.HttpMessage.add_compression_filter">[docs]</a>    <span class="k">def</span> <span class="nf">add_compression_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s">&#39;deflate&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                               <span class="n">EOF_MARKER</span><span class="o">=</span><span class="n">EOF_MARKER</span><span class="p">,</span> <span class="n">EOL_MARKER</span><span class="o">=</span><span class="n">EOL_MARKER</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Compress incoming stream with deflate or gzip encoding.&quot;&quot;&quot;</span>
+        <span class="n">zlib_mode</span> <span class="o">=</span> <span class="p">(</span><span class="mi">16</span> <span class="o">+</span> <span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span>
+                     <span class="k">if</span> <span class="n">encoding</span> <span class="o">==</span> <span class="s">&#39;gzip&#39;</span> <span class="k">else</span> <span class="o">-</span><span class="n">zlib</span><span class="o">.</span><span class="n">MAX_WBITS</span><span class="p">)</span>
+        <span class="n">zcomp</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compressobj</span><span class="p">(</span><span class="n">wbits</span><span class="o">=</span><span class="n">zlib_mode</span><span class="p">)</span>
+
+        <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">chunk</span> <span class="ow">is</span> <span class="n">EOF_MARKER</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">zcomp</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">EOF_MARKER</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">zcomp</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield</span> <span class="n">EOL_MARKER</span>
+
+</div></div>
+<div class="viewcode-block" id="Response"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.Response">[docs]</a><span class="k">class</span> <span class="nc">Response</span><span class="p">(</span><span class="n">HttpMessage</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create http response message.</span>
+
+<span class="sd">    Transport is a socket stream transport. status is a response status code,</span>
+<span class="sd">    status has to be integer value. http_version is a tuple that represents</span>
+<span class="sd">    http version, (1, 0) stands for HTTP/1.0 and (1, 1) is for HTTP/1.1</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">HOP_HEADERS</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Response.calc_reason"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.Response.calc_reason">[docs]</a>    <span class="k">def</span> <span class="nf">calc_reason</span><span class="p">(</span><span class="n">status</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">_RESPONSES</span><span class="o">=</span><span class="n">RESPONSES</span><span class="p">):</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">_RESPONSES</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reason</span>
+</div>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span>
+                 <span class="n">http_version</span><span class="o">=</span><span class="n">HttpVersion11</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">transport</span><span class="p">,</span> <span class="n">http_version</span><span class="p">,</span> <span class="n">close</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="k">if</span> <span class="n">reason</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calc_reason</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reason</span> <span class="o">=</span> <span class="n">reason</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_line</span> <span class="o">=</span> <span class="s">&#39;HTTP/{}.{} {} {}</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">http_version</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">http_version</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">status</span><span class="p">,</span> <span class="n">reason</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_add_default_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_add_default_headers</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">DATE</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="c"># format_date_time(None) is quite expensive</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="n">format_date_time</span><span class="p">(</span><span class="bp">None</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SERVER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">SERVER_SOFTWARE</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Request"><a class="viewcode-back" href="../../api.html#aiohttp.protocol.Request">[docs]</a><span class="k">class</span> <span class="nc">Request</span><span class="p">(</span><span class="n">HttpMessage</span><span class="p">):</span>
+
+    <span class="n">HOP_HEADERS</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span>
+                 <span class="n">http_version</span><span class="o">=</span><span class="n">HttpVersion11</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="c"># set the default for HTTP 1.0 to be different</span>
+        <span class="c"># will only be overwritten with keep-alive header</span>
+        <span class="k">if</span> <span class="n">http_version</span> <span class="o">&lt;</span> <span class="n">HttpVersion11</span><span class="p">:</span>
+            <span class="n">close</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">transport</span><span class="p">,</span> <span class="n">http_version</span><span class="p">,</span> <span class="n">close</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status_line</span> <span class="o">=</span> <span class="s">&#39;{0} {1} HTTP/{2[0]}.{2[1]}</span><span class="se">\r\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">http_version</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

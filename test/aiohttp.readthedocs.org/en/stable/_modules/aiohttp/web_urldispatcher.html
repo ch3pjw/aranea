@@ -1,0 +1,717 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.web_urldispatcher &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/web_urldispatcher.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/web_urldispatcher",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/web_urldispatcher";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.web_urldispatcher</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">abc</span>
+<span class="kn">import</span> <span class="nn">asyncio</span>
+
+<span class="kn">import</span> <span class="nn">keyword</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">mimetypes</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sized</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Container</span>
+<span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="kn">import</span> <span class="n">urlencode</span><span class="p">,</span> <span class="n">unquote</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdrs</span>
+<span class="kn">from</span> <span class="nn">.abc</span> <span class="kn">import</span> <span class="n">AbstractRouter</span><span class="p">,</span> <span class="n">AbstractMatchInfo</span>
+<span class="kn">from</span> <span class="nn">.protocol</span> <span class="kn">import</span> <span class="n">HttpVersion11</span>
+<span class="kn">from</span> <span class="nn">.web_exceptions</span> <span class="kn">import</span> <span class="n">HTTPMethodNotAllowed</span><span class="p">,</span> <span class="n">HTTPNotFound</span><span class="p">,</span> <span class="n">HTTPNotModified</span>
+<span class="kn">from</span> <span class="nn">.web_reqrep</span> <span class="kn">import</span> <span class="n">StreamResponse</span>
+<span class="kn">from</span> <span class="nn">.multidict</span> <span class="kn">import</span> <span class="n">upstr</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;UrlDispatcher&#39;</span><span class="p">,</span> <span class="s">&#39;UrlMappingMatchInfo&#39;</span><span class="p">,</span>
+           <span class="s">&#39;Route&#39;</span><span class="p">,</span> <span class="s">&#39;PlainRoute&#39;</span><span class="p">,</span> <span class="s">&#39;DynamicRoute&#39;</span><span class="p">,</span> <span class="s">&#39;StaticRoute&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="UrlMappingMatchInfo"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlMappingMatchInfo">[docs]</a><span class="k">class</span> <span class="nc">UrlMappingMatchInfo</span><span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">AbstractMatchInfo</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">match_dict</span><span class="p">,</span> <span class="n">route</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">match_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_route</span> <span class="o">=</span> <span class="n">route</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_route</span><span class="o">.</span><span class="n">handler</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">route</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_route</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;MatchInfo {}: {}&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__repr__</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_route</span><span class="p">)</span>
+
+</div>
+<span class="nd">@asyncio.coroutine</span>
+<span class="k">def</span> <span class="nf">_defaultExpectHandler</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Default handler for Except: 100-continue&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">version</span> <span class="o">==</span> <span class="n">HttpVersion11</span><span class="p">:</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">b</span><span class="s">&quot;HTTP/1.1 100 Continue</span><span class="se">\r\n\r\n</span><span class="s">&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Route"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.Route">[docs]</a><span class="k">class</span> <span class="nc">Route</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">expect_handler</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">expect_handler</span> <span class="o">=</span> <span class="n">_defaultExpectHandler</span>
+        <span class="k">assert</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">expect_handler</span><span class="p">),</span> \
+            <span class="s">&#39;Coroutine is expected, got {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">expect_handler</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handler</span> <span class="o">=</span> <span class="n">handler</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_expect_handler</span> <span class="o">=</span> <span class="n">expect_handler</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_method</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handler</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_name</span>
+
+    <span class="nd">@abc.abstractmethod</span>  <span class="c"># pragma: no branch</span>
+<div class="viewcode-block" id="Route.match"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.Route.match">[docs]</a>    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return dict with info for given path or</span>
+<span class="sd">        None if route cannot process path.&quot;&quot;&quot;</span>
+</div>
+    <span class="nd">@abc.abstractmethod</span>  <span class="c"># pragma: no branch</span>
+<div class="viewcode-block" id="Route.url"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.Route.url">[docs]</a>    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct url for route with additional params.&quot;&quot;&quot;</span>
+</div>
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">handle_expect_header</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_expect_handler</span><span class="p">(</span><span class="n">request</span><span class="p">))</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_append_query</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">query</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">url</span> <span class="o">+</span> <span class="s">&quot;?&quot;</span> <span class="o">+</span> <span class="n">urlencode</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">url</span>
+
+</div>
+<div class="viewcode-block" id="PlainRoute"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.PlainRoute">[docs]</a><span class="k">class</span> <span class="nc">PlainRoute</span><span class="p">(</span><span class="n">Route</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">=</span> <span class="n">path</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="c"># string comparison is about 10 times faster than regexp matching</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_path</span> <span class="o">==</span> <span class="n">path</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="PlainRoute.url"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.PlainRoute.url">[docs]</a>    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;PlainRoute {name}[{method}] {path} -&gt; {handler!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_path</span><span class="p">,</span>
+            <span class="n">handler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="DynamicRoute"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.DynamicRoute">[docs]</a><span class="k">class</span> <span class="nc">DynamicRoute</span><span class="p">(</span><span class="n">Route</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">formatter</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span> <span class="o">=</span> <span class="n">pattern</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span> <span class="o">=</span> <span class="n">formatter</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pattern</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DynamicRoute.url"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.DynamicRoute.url">[docs]</a>    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span><span class="o">.</span><span class="n">format_map</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_query</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;&lt;DynamicRoute {name}[{method}] {formatter} -&gt; {handler!r}&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+                        <span class="n">formatter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_formatter</span><span class="p">,</span> <span class="n">handler</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">handler</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="StaticRoute"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.StaticRoute">[docs]</a><span class="k">class</span> <span class="nc">StaticRoute</span><span class="p">(</span><span class="n">Route</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">256</span><span class="o">*</span><span class="mi">1024</span><span class="p">,</span>
+                 <span class="n">response_factory</span><span class="o">=</span><span class="n">StreamResponse</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">prefix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">),</span> <span class="n">prefix</span>
+        <span class="k">assert</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">),</span> <span class="n">prefix</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">=</span> <span class="n">prefix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_prefix_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_chunk_size</span> <span class="o">=</span> <span class="n">chunk_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_factory</span> <span class="o">=</span> <span class="n">response_factory</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;No directory exists at &#39;{}&#39;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s">&#39;filename&#39;</span><span class="p">:</span> <span class="n">path</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix_len</span><span class="p">:]}</span>
+
+<div class="viewcode-block" id="StaticRoute.url"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.StaticRoute.url">[docs]</a>    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">while</span> <span class="n">filename</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span> <span class="o">+</span> <span class="n">filename</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_append_query</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">query</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_sendfile_cb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fut</span><span class="p">,</span> <span class="n">out_fd</span><span class="p">,</span> <span class="n">in_fd</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span>
+                     <span class="n">registered</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">registered</span><span class="p">:</span>
+            <span class="n">loop</span><span class="o">.</span><span class="n">remove_writer</span><span class="p">(</span><span class="n">out_fd</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">sendfile</span><span class="p">(</span><span class="n">out_fd</span><span class="p">,</span> <span class="n">in_fd</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># EOF reached</span>
+                <span class="n">n</span> <span class="o">=</span> <span class="n">count</span>
+        <span class="k">except</span> <span class="p">(</span><span class="n">BlockingIOError</span><span class="p">,</span> <span class="n">InterruptedError</span><span class="p">):</span>
+            <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="n">fut</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">:</span>
+            <span class="n">loop</span><span class="o">.</span><span class="n">add_writer</span><span class="p">(</span><span class="n">out_fd</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendfile_cb</span><span class="p">,</span> <span class="n">fut</span><span class="p">,</span> <span class="n">out_fd</span><span class="p">,</span> <span class="n">in_fd</span><span class="p">,</span>
+                            <span class="n">offset</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">count</span> <span class="o">-</span> <span class="n">n</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fut</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_sendfile_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">fobj</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Write `count` bytes of `fobj` to `resp` starting from `offset` using</span>
+<span class="sd">        the ``sendfile`` system call.</span>
+
+<span class="sd">        `req` should be a :obj:`aiohttp.web.Request` instance.</span>
+
+<span class="sd">        `resp` should be a :obj:`aiohttp.web.StreamResponse` instance.</span>
+
+<span class="sd">        `fobj` should be an open file object.</span>
+
+<span class="sd">        `offset` should be an integer &gt;= 0.</span>
+
+<span class="sd">        `count` should be an integer &gt; 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">transport</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">transport</span>
+
+        <span class="k">if</span> <span class="n">transport</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&quot;sslcontext&quot;</span><span class="p">):</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendfile_fallback</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">fobj</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+
+        <span class="n">loop</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">loop</span>
+        <span class="n">out_fd</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&quot;socket&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+        <span class="n">in_fd</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">fileno</span><span class="p">()</span>
+        <span class="n">fut</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sendfile_cb</span><span class="p">(</span><span class="n">fut</span><span class="p">,</span> <span class="n">out_fd</span><span class="p">,</span> <span class="n">in_fd</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">loop</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+        <span class="k">yield from</span> <span class="n">fut</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_sendfile_fallback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">fobj</span><span class="p">,</span> <span class="n">count</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Mimic the :meth:`_sendfile_system` method, but without using the</span>
+<span class="sd">        ``sendfile`` system call. This should be used on systems that don&#39;t</span>
+<span class="sd">        support the ``sendfile`` system call.</span>
+
+<span class="sd">        To avoid blocking the event loop &amp; to keep memory usage low, `fobj` is</span>
+<span class="sd">        transferred in chunks controlled by the `chunk_size` argument to</span>
+<span class="sd">        :class:`StaticRoute`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">chunk_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunk_size</span>
+
+        <span class="n">chunk</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">chunk</span> <span class="ow">and</span> <span class="n">count</span> <span class="o">&gt;</span> <span class="n">chunk_size</span><span class="p">:</span>
+            <span class="n">resp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+            <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+            <span class="n">count</span> <span class="o">=</span> <span class="n">count</span> <span class="o">-</span> <span class="n">chunk_size</span>
+            <span class="n">chunk</span> <span class="o">=</span> <span class="n">fobj</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">chunk_size</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">chunk</span><span class="p">:</span>
+            <span class="n">resp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">[:</span><span class="n">count</span><span class="p">])</span>
+            <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">drain</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">os</span><span class="p">,</span> <span class="s">&quot;sendfile&quot;</span><span class="p">):</span>  <span class="c"># pragma: no cover</span>
+        <span class="n">_sendfile</span> <span class="o">=</span> <span class="n">_sendfile_system</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c"># pragma: no cover</span>
+        <span class="n">_sendfile</span> <span class="o">=</span> <span class="n">_sendfile_fallback</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">match_info</span><span class="p">[</span><span class="s">&#39;filename&#39;</span><span class="p">]</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filepath</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">HTTPNotFound</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">HTTPNotFound</span><span class="p">()</span>
+
+        <span class="n">st</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+
+        <span class="n">modsince</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">if_modified_since</span>
+        <span class="k">if</span> <span class="n">modsince</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">st</span><span class="o">.</span><span class="n">st_mtime</span> <span class="o">&lt;=</span> <span class="n">modsince</span><span class="o">.</span><span class="n">timestamp</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">HTTPNotModified</span><span class="p">()</span>
+
+        <span class="n">ct</span><span class="p">,</span> <span class="n">encoding</span> <span class="o">=</span> <span class="n">mimetypes</span><span class="o">.</span><span class="n">guess_type</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">ct</span><span class="p">:</span>
+            <span class="n">ct</span> <span class="o">=</span> <span class="s">&#39;application/octet-stream&#39;</span>
+
+        <span class="n">resp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_factory</span><span class="p">()</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">ct</span>
+        <span class="k">if</span> <span class="n">encoding</span><span class="p">:</span>
+            <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_ENCODING</span><span class="p">]</span> <span class="o">=</span> <span class="n">encoding</span>
+        <span class="n">resp</span><span class="o">.</span><span class="n">last_modified</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">st_mtime</span>
+
+        <span class="n">file_size</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">st_size</span>
+
+        <span class="n">resp</span><span class="o">.</span><span class="n">content_length</span> <span class="o">=</span> <span class="n">file_size</span>
+        <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">prepare</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sendfile</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">resp</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">file_size</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">resp</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="s">&quot;&#39;&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;&#39; &quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="s">&quot;&quot;</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;StaticRoute {name}[{method}] {path} -&gt; {directory!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_prefix</span><span class="p">,</span>
+            <span class="n">directory</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_directory</span><span class="p">)</span>
+
+</div>
+<span class="k">class</span> <span class="nc">SystemRoute</span><span class="p">(</span><span class="n">Route</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">reason</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_ANY</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reason</span> <span class="o">=</span> <span class="n">reason</span>
+
+    <span class="k">def</span> <span class="nf">url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;.url() is not allowed for SystemRoute&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_status</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">reason</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reason</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;SystemRoute {status}: {reason}&gt;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_status</span><span class="p">,</span>
+                                                         <span class="n">reason</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_reason</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_NotFoundMatchInfo</span><span class="p">(</span><span class="n">UrlMappingMatchInfo</span><span class="p">):</span>
+
+    <span class="n">route</span> <span class="o">=</span> <span class="n">SystemRoute</span><span class="p">(</span><span class="mi">404</span><span class="p">,</span> <span class="s">&#39;Not Found&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">({},</span> <span class="bp">None</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_not_found</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_not_found</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPNotFound</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;&lt;MatchInfo: not found&gt;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">_MethodNotAllowedMatchInfo</span><span class="p">(</span><span class="n">UrlMappingMatchInfo</span><span class="p">):</span>
+
+    <span class="n">route</span> <span class="o">=</span> <span class="n">SystemRoute</span><span class="p">(</span><span class="mi">405</span><span class="p">,</span> <span class="s">&#39;Method Not Allowed&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">allowed_methods</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">({},</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_method</span> <span class="o">=</span> <span class="n">method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_allowed_methods</span> <span class="o">=</span> <span class="n">allowed_methods</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_not_allowed</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_not_allowed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">HTTPMethodNotAllowed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_allowed_methods</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;&lt;MatchInfo: method {} is not allowed (allowed methods: {}&gt;&quot;</span>
+                <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_method</span><span class="p">,</span>
+                        <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_allowed_methods</span><span class="p">))))</span>
+
+
+<span class="k">class</span> <span class="nc">RoutesView</span><span class="p">(</span><span class="n">Sized</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Container</span><span class="p">):</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="s">&#39;_urls&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">urls</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span> <span class="o">=</span> <span class="n">urls</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_urls</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">route</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">route</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span>
+
+
+<div class="viewcode-block" id="UrlDispatcher"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlDispatcher">[docs]</a><span class="k">class</span> <span class="nc">UrlDispatcher</span><span class="p">(</span><span class="n">AbstractRouter</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
+
+    <span class="n">DYN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;^\{(?P&lt;var&gt;[a-zA-Z][_a-zA-Z0-9]*)\}$&#39;</span><span class="p">)</span>
+    <span class="n">DYN_WITH_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+        <span class="s">r&#39;^\{(?P&lt;var&gt;[a-zA-Z][_a-zA-Z0-9]*):(?P&lt;re&gt;.+)\}$&#39;</span><span class="p">)</span>
+    <span class="n">GOOD</span> <span class="o">=</span> <span class="s">r&#39;[^{}/]+&#39;</span>
+    <span class="n">ROUTE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">r&#39;(\{[_a-zA-Z][^{}]*(?:\{[^{}]*\}[^{}]*)*\})&#39;</span><span class="p">)</span>
+    <span class="n">NAME_SPLIT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;[.:]&#39;</span><span class="p">)</span>
+
+    <span class="n">METHODS</span> <span class="o">=</span> <span class="p">{</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_ANY</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_POST</span><span class="p">,</span>
+               <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PUT</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_DELETE</span><span class="p">,</span>
+               <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PATCH</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_HEAD</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_OPTIONS</span><span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+<div class="viewcode-block" id="UrlDispatcher.resolve"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlDispatcher.resolve">[docs]</a>    <span class="k">def</span> <span class="nf">resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">raw_path</span>
+        <span class="n">method</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span>
+        <span class="n">allowed_methods</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span><span class="p">:</span>
+            <span class="n">match_dict</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">route_method</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">method</span>
+            <span class="k">if</span> <span class="n">route_method</span> <span class="o">==</span> <span class="n">method</span> <span class="ow">or</span> <span class="n">route_method</span> <span class="o">==</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_ANY</span><span class="p">:</span>
+                <span class="c"># Unquote separate matching parts</span>
+                <span class="n">match_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">unquote</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span>
+                              <span class="n">match_dict</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="k">return</span> <span class="n">UrlMappingMatchInfo</span><span class="p">(</span><span class="n">match_dict</span><span class="p">,</span> <span class="n">route</span><span class="p">)</span>
+
+            <span class="n">allowed_methods</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">route_method</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">allowed_methods</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_MethodNotAllowedMatchInfo</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">allowed_methods</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">_NotFoundMatchInfo</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__contains__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span>
+
+    <span class="k">def</span> <span class="nf">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+
+<div class="viewcode-block" id="UrlDispatcher.routes"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlDispatcher.routes">[docs]</a>    <span class="k">def</span> <span class="nf">routes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">RoutesView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_urls</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">register_route</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">route</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">route</span><span class="p">,</span> <span class="n">Route</span><span class="p">),</span> <span class="s">&#39;Instance of Route class is required.&#39;</span>
+
+        <span class="n">name</span> <span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">name</span>
+
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">NAME_SPLIT_RE</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">parts</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">part</span><span class="o">.</span><span class="n">isidentifier</span><span class="p">()</span> <span class="ow">or</span> <span class="n">keyword</span><span class="o">.</span><span class="n">iskeyword</span><span class="p">(</span><span class="n">part</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Incorrect route name value, &#39;</span>
+                                     <span class="s">&#39;Route name should be a sequence of &#39;</span>
+                                     <span class="s">&#39;python identifiers separated &#39;</span>
+                                     <span class="s">&#39;by dot or column&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Duplicate {!r}, &#39;</span>
+                                 <span class="s">&#39;already handled by {!r}&#39;</span>
+                                 <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">[</span><span class="n">name</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_routes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">route</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_urls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">route</span><span class="p">)</span>
+
+<div class="viewcode-block" id="UrlDispatcher.add_route"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlDispatcher.add_route">[docs]</a>    <span class="k">def</span> <span class="nf">add_route</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span>
+                  <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;path should be started with /&quot;</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">handler</span><span class="p">),</span> <span class="n">handler</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">iscoroutinefunction</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span> <span class="ow">and</span>
+                <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isgeneratorfunction</span><span class="p">(</span><span class="n">handler</span><span class="p">)):</span>
+            <span class="n">handler</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">coroutine</span><span class="p">(</span><span class="n">handler</span><span class="p">)</span>
+
+        <span class="n">method</span> <span class="o">=</span> <span class="n">upstr</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">METHODS</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;{} is not allowed HTTP method&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="s">&#39;{&#39;</span> <span class="ow">in</span> <span class="n">path</span> <span class="ow">or</span> <span class="s">&#39;}&#39;</span> <span class="ow">in</span> <span class="n">path</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROUTE_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">path</span><span class="p">)):</span>
+            <span class="n">route</span> <span class="o">=</span> <span class="n">PlainRoute</span><span class="p">(</span>
+                <span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_route</span><span class="p">(</span><span class="n">route</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">route</span>
+
+        <span class="n">pattern</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="n">formatter</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROUTE_RE</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DYN</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="n">pattern</span> <span class="o">+=</span> <span class="s">&#39;(?P&lt;{}&gt;{})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&#39;var&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">GOOD</span><span class="p">)</span>
+                <span class="n">formatter</span> <span class="o">+=</span> <span class="s">&#39;{&#39;</span> <span class="o">+</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&#39;var&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;}&#39;</span>
+                <span class="k">continue</span>
+
+            <span class="n">match</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">DYN_WITH_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                <span class="n">pattern</span> <span class="o">+=</span> <span class="s">&#39;(?P&lt;{var}&gt;{re})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">())</span>
+                <span class="n">formatter</span> <span class="o">+=</span> <span class="s">&#39;{&#39;</span> <span class="o">+</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s">&#39;var&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;}&#39;</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="s">&#39;{&#39;</span> <span class="ow">in</span> <span class="n">part</span> <span class="ow">or</span> <span class="s">&#39;}&#39;</span> <span class="ow">in</span> <span class="n">part</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid path &#39;{}&#39;[&#39;{}&#39;]&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">part</span><span class="p">))</span>
+
+            <span class="n">formatter</span> <span class="o">+=</span> <span class="n">part</span>
+            <span class="n">pattern</span> <span class="o">+=</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">part</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">compiled</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;^&#39;</span> <span class="o">+</span> <span class="n">pattern</span> <span class="o">+</span> <span class="s">&#39;$&#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">re</span><span class="o">.</span><span class="n">error</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s">&quot;Bad pattern &#39;{}&#39;: {}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">exc</span><span class="p">))</span> <span class="kn">from</span> <span class="bp">None</span>
+        <span class="n">route</span> <span class="o">=</span> <span class="n">DynamicRoute</span><span class="p">(</span>
+            <span class="n">method</span><span class="p">,</span> <span class="n">handler</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">compiled</span><span class="p">,</span>
+            <span class="n">formatter</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_route</span><span class="p">(</span><span class="n">route</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">route</span>
+</div>
+<div class="viewcode-block" id="UrlDispatcher.add_static"><a class="viewcode-back" href="../../web_reference.html#aiohttp.web.UrlDispatcher.add_static">[docs]</a>    <span class="k">def</span> <span class="nf">add_static</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">expect_handler</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                   <span class="n">chunk_size</span><span class="o">=</span><span class="mi">256</span><span class="o">*</span><span class="mi">1024</span><span class="p">,</span> <span class="n">response_factory</span><span class="o">=</span><span class="n">StreamResponse</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Adds static files view</span>
+<span class="sd">        :param prefix - url prefix</span>
+<span class="sd">        :param path - folder with files</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">prefix</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">prefix</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">):</span>
+            <span class="n">prefix</span> <span class="o">+=</span> <span class="s">&#39;/&#39;</span>
+        <span class="n">route</span> <span class="o">=</span> <span class="n">StaticRoute</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span>
+                            <span class="n">expect_handler</span><span class="o">=</span><span class="n">expect_handler</span><span class="p">,</span>
+                            <span class="n">chunk_size</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+                            <span class="n">response_factory</span><span class="o">=</span><span class="n">response_factory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_route</span><span class="p">(</span><span class="n">route</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">route</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

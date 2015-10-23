@@ -1,0 +1,609 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Multidicts &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="Working with Multipart" href="multipart.html" />
+    <link rel="prev" title="Low-level HTTP Server" href="server.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/multidict.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "multidict",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "multidict";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="multidicts">
+<span id="aiohttp-multidict"></span><h1>Multidicts<a class="headerlink" href="#multidicts" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-aiohttp"></span><p><em>HTTP Headers</em> and <em>URL query string</em> require specific data structure:
+<em>multidict</em>. It behaves mostly like a <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a> but it can have
+several <em>values</em> for the same <em>key</em>.</p>
+<p><a class="reference internal" href="#module-aiohttp" title="aiohttp"><code class="xref py py-mod docutils literal"><span class="pre">aiohttp</span></code></a> has four multidict classes:
+<a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a>, <a class="reference internal" href="#aiohttp.MultiDictProxy" title="aiohttp.MultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">MultiDictProxy</span></code></a>, <a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a>
+and <a class="reference internal" href="#aiohttp.CIMultiDictProxy" title="aiohttp.CIMultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDictProxy</span></code></a>.</p>
+<p>Immutable proxies (<a class="reference internal" href="#aiohttp.MultiDictProxy" title="aiohttp.MultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">MultiDictProxy</span></code></a> and
+<a class="reference internal" href="#aiohttp.CIMultiDictProxy" title="aiohttp.CIMultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDictProxy</span></code></a>) provide a dynamic view on the
+proxied multidict, the view reflects the multidict changes. They
+implement the <a class="reference external" href="http://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Mapping</span></code></a> interface.</p>
+<p>Regular mutable (<a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a> and <a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a>) classes
+implement <a class="reference external" href="http://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">MutableMapping</span></code></a> and allows to change
+their own content.</p>
+<p><em>Case insensitive</em> (<a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a> and
+<a class="reference internal" href="#aiohttp.CIMultiDictProxy" title="aiohttp.CIMultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDictProxy</span></code></a>) ones assumes the <em>keys</em> are case
+insensitive, e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s">&#39;val&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;A&#39;</span> <span class="ow">in</span> <span class="n">dct</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span><span class="p">[</span><span class="s">&#39;A&#39;</span><span class="p">]</span>
+<span class="go">&#39;val&#39;</span>
+</pre></div>
+</div>
+<p><em>Keys</em> should be a <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>.</p>
+<div class="section" id="multidict">
+<h2>MultiDict<a class="headerlink" href="#multidict" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.MultiDict">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">MultiDict</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">MultiDict</code><span class="sig-paren">(</span><em>mapping</em>, <em>**kwargs</em><span class="sig-paren">)</span></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">MultiDict</code><span class="sig-paren">(</span><em>iterable</em>, <em>**kwargs</em><span class="sig-paren">)</span></dt>
+<dd><p>Creates a mutable multidict instance.</p>
+<p>Accepted parameters are the same as for <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a>.</p>
+<p>If the same key appears several times it will be added, e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">d</span> <span class="o">=</span> <span class="n">MultiDict</span><span class="p">[(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;b&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">d</span>
+<span class="go">&lt;MultiDict {&#39;a&#39;: 1, &#39;b&#39;: 2, &#39;a&#39;: 3}&gt;</span>
+</pre></div>
+</div>
+<dl class="method">
+<dt id="aiohttp.MultiDict.len">
+<code class="descname">len</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of items in multidict <em>d</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">d[key]</code></dt>
+<dd><p>Return the <strong>first</strong> item of <em>d</em> with key <em>key</em>.</p>
+<p>Raises a <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if key is not in the multidict.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">d[key] = value</code></dt>
+<dd><p>Set <code class="docutils literal"><span class="pre">d[key]</span></code> to <em>value</em>.</p>
+<p>Replace all items where key is equal to <em>key</em> with single item
+<code class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">del d[key]</code></dt>
+<dd><p>Remove all items where key is equal to <em>key</em> from <em>d</em>.
+Raises a <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if <em>key</em> is not in the map.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">key in d</code></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">True</span></code> if d has a key <em>key</em>, else <code class="docutils literal"><span class="pre">False</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">key not in d</code></dt>
+<dd><p>Equivalent to <code class="docutils literal"><span class="pre">not</span> <span class="pre">(key</span> <span class="pre">in</span> <span class="pre">d)</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.iter">
+<code class="descname">iter</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator over the keys of the dictionary.
+This is a shortcut for <code class="docutils literal"><span class="pre">iter(d.keys())</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.add">
+<code class="descname">add</code><span class="sig-paren">(</span><em>key</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.add" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append <code class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></code> pair to the dictionary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.clear">
+<code class="descname">clear</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.clear" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove all items from the dictionary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a shallow copy of the dictionary.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.extend">
+<code class="descname">extend</code><span class="sig-paren">(</span><span class="optional">[</span><em>other</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.extend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extend the dictionary with the key/value pairs from <em>other</em>,
+overwriting existing keys.
+Return <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<p><a class="reference internal" href="#aiohttp.MultiDict.extend" title="aiohttp.MultiDict.extend"><code class="xref py py-meth docutils literal"><span class="pre">extend()</span></code></a> accepts either another dictionary object or an
+iterable of key/value pairs (as tuples or other iterables of
+length two). If keyword arguments are specified, the dictionary
+is then extended with those key/value pairs:
+<code class="docutils literal"><span class="pre">d.extend(red=1,</span> <span class="pre">blue=2)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.getone">
+<code class="descname">getone</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.getone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <strong>first</strong> value for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if <em>default</em> is not given and <em>key</em> is not found.</p>
+<p><code class="docutils literal"><span class="pre">d[key]</span></code> is equivalent to <code class="docutils literal"><span class="pre">d.getone(key)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.getall">
+<code class="descname">getall</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.getall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all values for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if <em>default</em> is not given and <em>key</em> is not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <strong>first</strong> value for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>If <em>default</em> is not given, it defaults to <code class="docutils literal"><span class="pre">None</span></code>, so that this
+method never raises a <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a>.</p>
+<p><code class="docutils literal"><span class="pre">d.get(key)</span></code> is equivalent to <code class="docutils literal"><span class="pre">d.getone(key,</span> <span class="pre">None)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s keys.</p>
+<p>View contains all keys, possibly with duplicates.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.items">
+<code class="descname">items</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s items (<code class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></code> pairs).</p>
+<p>View contains all items, multiple items can have the same key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s values.</p>
+<p>View contains all values.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.pop">
+<code class="descname">pop</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.pop" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <em>key</em> is in the dictionary, remove it and return its the
+<strong>first</strong> value, else return <em>default</em>.</p>
+<p>If <em>default</em> is not given and <em>key</em> is not in the dictionary, a
+<a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> is raised.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.popitem">
+<code class="descname">popitem</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.popitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove and return an arbitrary <code class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></code> pair from the dictionary.</p>
+<p><a class="reference internal" href="#aiohttp.MultiDict.popitem" title="aiohttp.MultiDict.popitem"><code class="xref py py-meth docutils literal"><span class="pre">popitem()</span></code></a> is useful to destructively iterate over a
+dictionary, as often used in set algorithms.</p>
+<p>If the dictionary is empty, calling <a class="reference internal" href="#aiohttp.MultiDict.popitem" title="aiohttp.MultiDict.popitem"><code class="xref py py-meth docutils literal"><span class="pre">popitem()</span></code></a> raises a
+<a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.setdefault">
+<code class="descname">setdefault</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.setdefault" title="Permalink to this definition">¶</a></dt>
+<dd><p>If <em>key</em> is in the dictionary, return its the <strong>first</strong> value.
+If not, insert <em>key</em> with a value of <em>default</em> and return <em>default</em>.
+<em>default</em> defaults to <code class="docutils literal"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDict.update">
+<code class="descname">update</code><span class="sig-paren">(</span><span class="optional">[</span><em>other</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDict.update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the dictionary with the key/value pairs from <em>other</em>,
+overwriting existing keys.</p>
+<p>Return <code class="docutils literal"><span class="pre">None</span></code>.</p>
+<p><a class="reference internal" href="#aiohttp.MultiDict.update" title="aiohttp.MultiDict.update"><code class="xref py py-meth docutils literal"><span class="pre">update()</span></code></a> accepts either another dictionary object or an
+iterable of key/value pairs (as tuples or other iterables
+of length two). If keyword arguments are specified, the
+dictionary is then updated with those key/value pairs:
+<code class="docutils literal"><span class="pre">d.update(red=1,</span> <span class="pre">blue=2)</span></code>.</p>
+</dd></dl>
+
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#aiohttp.MultiDictProxy" title="aiohttp.MultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">MultiDictProxy</span></code></a> can be used to create a read-only view
+of a <a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a>.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="cimultidict">
+<h2>CIMultiDict<a class="headerlink" href="#cimultidict" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.CIMultiDict">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">CIMultiDict</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.CIMultiDict" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">CIMultiDict</code><span class="sig-paren">(</span><em>mapping</em>, <em>**kwargs</em><span class="sig-paren">)</span></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">CIMultiDict</code><span class="sig-paren">(</span><em>iterable</em>, <em>**kwargs</em><span class="sig-paren">)</span></dt>
+<dd><p>Create a case insensitive multidict instance.</p>
+<p>The behavior is the same as of <a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a> but key
+comparisons are case insensitive, e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s">&#39;val&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="s">&#39;A&#39;</span> <span class="ow">in</span> <span class="n">dct</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span><span class="p">[</span><span class="s">&#39;A&#39;</span><span class="p">]</span>
+<span class="go">&#39;val&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span><span class="p">[</span><span class="s">&#39;a&#39;</span><span class="p">]</span>
+<span class="go">&#39;val&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span><span class="p">[</span><span class="s">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;new val&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dct</span><span class="p">[</span><span class="s">&#39;B&#39;</span><span class="p">]</span>
+<span class="go">&#39;new val&#39;</span>
+</pre></div>
+</div>
+<p>The class is inherited from <a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a>.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#aiohttp.CIMultiDictProxy" title="aiohttp.CIMultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDictProxy</span></code></a> can be used to create a read-only view
+of a <a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a>.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="multidictproxy">
+<h2>MultiDictProxy<a class="headerlink" href="#multidictproxy" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.MultiDictProxy">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">MultiDictProxy</code><span class="sig-paren">(</span><em>multidict</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create an immutable multidict proxy.</p>
+<p>It provides a dynamic view on
+the multidict’s entries, which means that when the multidict changes,
+the view reflects these changes.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code></a> is <em>multidict</em> is not <a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a> instance.</p>
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.len">
+<code class="descname">len</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.len" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return number of items in multidict <em>d</em>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">d[key]</code></dt>
+<dd><p>Return the <strong>first</strong> item of <em>d</em> with key <em>key</em>.</p>
+<p>Raises a <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if key is not in the multidict.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">key in d</code></dt>
+<dd><p>Return <code class="docutils literal"><span class="pre">True</span></code> if d has a key <em>key</em>, else <code class="docutils literal"><span class="pre">False</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<code class="descname">key not in d</code></dt>
+<dd><p>Equivalent to <code class="docutils literal"><span class="pre">not</span> <span class="pre">(key</span> <span class="pre">in</span> <span class="pre">d)</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.iter">
+<code class="descname">iter</code><span class="sig-paren">(</span><em>d</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an iterator over the keys of the dictionary.
+This is a shortcut for <code class="docutils literal"><span class="pre">iter(d.keys())</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.copy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a shallow copy of the underlying multidict.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.getone">
+<code class="descname">getone</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.getone" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <strong>first</strong> value for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if <em>default</em> is not given and <em>key</em> is not found.</p>
+<p><code class="docutils literal"><span class="pre">d[key]</span></code> is equivalent to <code class="docutils literal"><span class="pre">d.getone(key)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.getall">
+<code class="descname">getall</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.getall" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of all values for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a> if <em>default</em> is not given and <em>key</em> is not found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.get">
+<code class="descname">get</code><span class="sig-paren">(</span><em>key</em><span class="optional">[</span>, <em>default</em><span class="optional">]</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the <strong>first</strong> value for <em>key</em> if <em>key</em> is in the
+dictionary, else <em>default</em>.</p>
+<p>If <em>default</em> is not given, it defaults to <code class="docutils literal"><span class="pre">None</span></code>, so that this
+method never raises a <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#KeyError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">KeyError</span></code></a>.</p>
+<p><code class="docutils literal"><span class="pre">d.get(key)</span></code> is equivalent to <code class="docutils literal"><span class="pre">d.getone(key,</span> <span class="pre">None)</span></code>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.keys">
+<code class="descname">keys</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.keys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s keys.</p>
+<p>View contains all keys, possibly with duplicates.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.items">
+<code class="descname">items</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.items" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s items (<code class="docutils literal"><span class="pre">(key,</span> <span class="pre">value)</span></code> pairs).</p>
+<p>View contains all items, multiple items can have the same key.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.MultiDictProxy.values">
+<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.MultiDictProxy.values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a new view of the dictionary&#8217;s values.</p>
+<p>View contains all values.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="cimultidictproxy">
+<h2>CIMultiDictProxy<a class="headerlink" href="#cimultidictproxy" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.CIMultiDictProxy">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">CIMultiDictProxy</code><span class="sig-paren">(</span><em>multidict</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.CIMultiDictProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Case insensitive version of <a class="reference internal" href="#aiohttp.MultiDictProxy" title="aiohttp.MultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">MultiDictProxy</span></code></a>.</p>
+<p>Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">TypeError</span></code></a> is <em>multidict</em> is not <a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a> instance.</p>
+<p>The class is inherited from <a class="reference internal" href="#aiohttp.MultiDict" title="aiohttp.MultiDict"><code class="xref py py-class docutils literal"><span class="pre">MultiDict</span></code></a>.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="upstr">
+<h2>upstr<a class="headerlink" href="#upstr" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a> accepts <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> as <em>key</em> argument for dict
+lookups but converts it to upper case internally.</p>
+<p>For more effective processing it should know if the <em>key</em> is already upper cased.</p>
+<p>To skip the <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str.upper" title="(in Python v3.5)"><code class="xref py py-meth docutils literal"><span class="pre">upper()</span></code></a> call you may want to create upper cased strings by
+hand, e.g:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">upstr</span><span class="p">(</span><span class="s">&#39;Key&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">key</span>
+<span class="go">&#39;KEY&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mdict</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s">&#39;value&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="ow">in</span> <span class="n">mdict</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mdict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<span class="go">&#39;value&#39;</span>
+</pre></div>
+</div>
+<p>For performance you should create <a class="reference internal" href="#aiohttp.upstr" title="aiohttp.upstr"><code class="xref py py-class docutils literal"><span class="pre">upstr</span></code></a> strings once and
+store them globally, like <code class="xref py py-mod docutils literal"><span class="pre">aiohttp.hdrs</span></code> does.</p>
+<dl class="class">
+<dt id="aiohttp.upstr">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">upstr</code><span class="sig-paren">(</span><em>object=''</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.upstr" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">upstr</code><span class="sig-paren">(</span><em>bytes_or_buffer</em><span class="optional">[</span>, <em>encoding</em><span class="optional">[</span>, <em>errors</em><span class="optional">]</span><span class="optional">]</span><span class="sig-paren">)</span></dt>
+<dd><p>Create a new <strong>upper cased</strong> string object from the given
+<em>object</em>. If <em>encoding</em> or <em>errors</em> are specified, then the
+object must expose a data buffer that will be decoded using the
+given encoding and error handler.</p>
+<p>Otherwise, returns the result of <code class="docutils literal"><span class="pre">object.__str__()</span></code> (if defined)
+or <code class="docutils literal"><span class="pre">repr(object)</span></code>.</p>
+<p><em>encoding</em> defaults to <code class="docutils literal"><span class="pre">sys.getdefaultencoding()</span></code>.</p>
+<p><em>errors</em> defaults to <code class="docutils literal"><span class="pre">'strict'</span></code>.</p>
+<p>The class is inherited from <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> and has all regular
+string methods.</p>
+</dd></dl>
+
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/multidict";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Multidicts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#multidict">MultiDict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cimultidict">CIMultiDict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#multidictproxy">MultiDictProxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cimultidictproxy">CIMultiDictProxy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#upstr">upstr</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/multidict.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

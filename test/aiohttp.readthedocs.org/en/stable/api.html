@@ -1,0 +1,1893 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Helpers API &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="Deployment using Gunicorn" href="gunicorn.html" />
+    <link rel="prev" title="Working with Multipart" href="multipart.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/api.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "api",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "api";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="helpers-api">
+<span id="aiohttp-api"></span><h1>Helpers API<a class="headerlink" href="#helpers-api" title="Permalink to this headline">¶</a></h1>
+<p>All public names from submodules
+<code class="docutils literal"><span class="pre">errors</span></code>, <code class="docutils literal"><span class="pre">multipart</span></code>, <code class="docutils literal"><span class="pre">parsers</span></code>, <code class="docutils literal"><span class="pre">protocol</span></code>, <code class="docutils literal"><span class="pre">utils</span></code>,
+<code class="docutils literal"><span class="pre">websocket</span></code> and <code class="docutils literal"><span class="pre">wsgi</span></code> are exported into <code class="docutils literal"><span class="pre">aiohttp</span></code>
+namespace.</p>
+<div class="section" id="module-aiohttp.errors">
+<span id="aiohttp-errors-module"></span><h2>aiohttp.errors module<a class="headerlink" href="#module-aiohttp.errors" title="Permalink to this headline">¶</a></h2>
+<p>http related errors.</p>
+<dl class="exception">
+<dt id="aiohttp.errors.DisconnectedError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">DisconnectedError</code><a class="reference internal" href="_modules/aiohttp/errors.html#DisconnectedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.DisconnectedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>Disconnected.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientDisconnectedError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientDisconnectedError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientDisconnectedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientDisconnectedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.DisconnectedError" title="aiohttp.errors.DisconnectedError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.DisconnectedError</span></code></a></p>
+<p>Client disconnected.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ServerDisconnectedError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ServerDisconnectedError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ServerDisconnectedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ServerDisconnectedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.DisconnectedError" title="aiohttp.errors.DisconnectedError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.DisconnectedError</span></code></a></p>
+<p>Server disconnected.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.HttpProcessingError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">HttpProcessingError</code><span class="sig-paren">(</span><em>*</em>, <em>code=None</em>, <em>message=''</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#HttpProcessingError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.HttpProcessingError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>Http error.</p>
+<p>Shortcut for raising http errors with custom code, message and headers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>code</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; HTTP Error code.</li>
+<li><strong>message</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; (optional) Error message.</li>
+<li><strong>of [tuple] headers</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.5)"><em>list</em></a>) &#8211; (optional) Headers to be sent in response.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpProcessingError.code">
+<code class="descname">code</code><em class="property"> = 0</em><a class="headerlink" href="#aiohttp.errors.HttpProcessingError.code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpProcessingError.headers">
+<code class="descname">headers</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.errors.HttpProcessingError.headers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpProcessingError.message">
+<code class="descname">message</code><em class="property"> = ''</em><a class="headerlink" href="#aiohttp.errors.HttpProcessingError.message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.BadHttpMessage">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">BadHttpMessage</code><span class="sig-paren">(</span><em>message</em>, <em>*</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#BadHttpMessage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.BadHttpMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.HttpProcessingError" title="aiohttp.errors.HttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.HttpProcessingError</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.errors.BadHttpMessage.code">
+<code class="descname">code</code><em class="property"> = 400</em><a class="headerlink" href="#aiohttp.errors.BadHttpMessage.code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.errors.BadHttpMessage.message">
+<code class="descname">message</code><em class="property"> = 'Bad Request'</em><a class="headerlink" href="#aiohttp.errors.BadHttpMessage.message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.HttpMethodNotAllowed">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">HttpMethodNotAllowed</code><span class="sig-paren">(</span><em>*</em>, <em>code=None</em>, <em>message=''</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#HttpMethodNotAllowed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.HttpMethodNotAllowed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.HttpProcessingError" title="aiohttp.errors.HttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.HttpProcessingError</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpMethodNotAllowed.code">
+<code class="descname">code</code><em class="property"> = 405</em><a class="headerlink" href="#aiohttp.errors.HttpMethodNotAllowed.code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpMethodNotAllowed.message">
+<code class="descname">message</code><em class="property"> = 'Method Not Allowed'</em><a class="headerlink" href="#aiohttp.errors.HttpMethodNotAllowed.message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.HttpBadRequest">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">HttpBadRequest</code><span class="sig-paren">(</span><em>message</em>, <em>*</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#HttpBadRequest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.HttpBadRequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.BadHttpMessage" title="aiohttp.errors.BadHttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.BadHttpMessage</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpBadRequest.code">
+<code class="descname">code</code><em class="property"> = 400</em><a class="headerlink" href="#aiohttp.errors.HttpBadRequest.code" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.errors.HttpBadRequest.message">
+<code class="descname">message</code><em class="property"> = 'Bad Request'</em><a class="headerlink" href="#aiohttp.errors.HttpBadRequest.message" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.HttpProxyError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">HttpProxyError</code><span class="sig-paren">(</span><em>*</em>, <em>code=None</em>, <em>message=''</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#HttpProxyError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.HttpProxyError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.HttpProcessingError" title="aiohttp.errors.HttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.HttpProcessingError</span></code></a></p>
+<p>Http proxy error.</p>
+<p>Raised in <code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.ProxyConnector</span></code> if
+proxy responds with status other than <code class="docutils literal"><span class="pre">200</span> <span class="pre">OK</span></code>
+on <code class="docutils literal"><span class="pre">CONNECT</span></code> request.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.BadStatusLine">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">BadStatusLine</code><span class="sig-paren">(</span><em>line=''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#BadStatusLine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.BadStatusLine" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.BadHttpMessage" title="aiohttp.errors.BadHttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.BadHttpMessage</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.LineTooLong">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">LineTooLong</code><span class="sig-paren">(</span><em>line</em>, <em>limit='Unknown'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#LineTooLong"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.LineTooLong" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.BadHttpMessage" title="aiohttp.errors.BadHttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.BadHttpMessage</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.InvalidHeader">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">InvalidHeader</code><span class="sig-paren">(</span><em>hdr</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#InvalidHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.InvalidHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.BadHttpMessage" title="aiohttp.errors.BadHttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.BadHttpMessage</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>Base class for client connection errors.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientHttpProcessingError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientHttpProcessingError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientHttpProcessingError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientHttpProcessingError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientError" title="aiohttp.errors.ClientError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientError</span></code></a></p>
+<p>Base class for client http processing errors.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientConnectionError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientConnectionError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientConnectionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientConnectionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientError" title="aiohttp.errors.ClientError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientError</span></code></a></p>
+<p>Base class for client socket errors.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientOSError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientOSError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientOSError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientOSError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientConnectionError" title="aiohttp.errors.ClientConnectionError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientConnectionError</span></code></a>, <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#OSError" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">OSError</span></code></a></p>
+<p>OSError error.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientTimeoutError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientTimeoutError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientTimeoutError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientTimeoutError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientConnectionError" title="aiohttp.errors.ClientConnectionError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientConnectionError</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">concurrent.futures._base.TimeoutError</span></code></p>
+<p>Client connection timeout error.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ProxyConnectionError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ProxyConnectionError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ProxyConnectionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ProxyConnectionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientConnectionError" title="aiohttp.errors.ClientConnectionError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientConnectionError</span></code></a></p>
+<p>Proxy connection error.</p>
+<p>Raised in <code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.ProxyConnector</span></code> if
+connection to proxy can not be established.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientRequestError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientRequestError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientRequestError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientRequestError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientHttpProcessingError" title="aiohttp.errors.ClientHttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientHttpProcessingError</span></code></a></p>
+<p>Connection error during sending request.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.ClientResponseError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">ClientResponseError</code><a class="reference internal" href="_modules/aiohttp/errors.html#ClientResponseError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.ClientResponseError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientHttpProcessingError" title="aiohttp.errors.ClientHttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientHttpProcessingError</span></code></a></p>
+<p>Connection error during reading response.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.FingerprintMismatch">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">FingerprintMismatch</code><span class="sig-paren">(</span><em>expected</em>, <em>got</em>, <em>host</em>, <em>port</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#FingerprintMismatch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.FingerprintMismatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientConnectionError" title="aiohttp.errors.ClientConnectionError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientConnectionError</span></code></a></p>
+<p>SSL certificate does not match expected fingerprint.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.WSServerHandshakeError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">WSServerHandshakeError</code><span class="sig-paren">(</span><em>message</em>, <em>*</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/errors.html#WSServerHandshakeError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.WSServerHandshakeError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.HttpProcessingError" title="aiohttp.errors.HttpProcessingError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.HttpProcessingError</span></code></a></p>
+<p>websocket server handshake error.</p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.errors.WSClientDisconnectedError">
+<em class="property">exception </em><code class="descclassname">aiohttp.errors.</code><code class="descname">WSClientDisconnectedError</code><a class="reference internal" href="_modules/aiohttp/errors.html#WSClientDisconnectedError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.errors.WSClientDisconnectedError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.errors.ClientDisconnectedError" title="aiohttp.errors.ClientDisconnectedError"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.errors.ClientDisconnectedError</span></code></a></p>
+<p>Deprecated.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.helpers">
+<span id="aiohttp-helpers-module"></span><h2>aiohttp.helpers module<a class="headerlink" href="#module-aiohttp.helpers" title="Permalink to this headline">¶</a></h2>
+<p>Various helper functions</p>
+<dl class="class">
+<dt id="aiohttp.helpers.BasicAuth">
+<em class="property">class </em><code class="descclassname">aiohttp.helpers.</code><code class="descname">BasicAuth</code><a class="reference internal" href="_modules/aiohttp/helpers.html#BasicAuth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.BasicAuth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.helpers.BasicAuth</span></code></a></p>
+<p>Http basic authentication helper.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>login</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Login</li>
+<li><strong>password</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Password</li>
+<li><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; (optional) encoding (&#8216;latin1&#8217; by default)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="aiohttp.helpers.BasicAuth.encode">
+<code class="descname">encode</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/helpers.html#BasicAuth.encode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.BasicAuth.encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode credentials.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.helpers.FormData">
+<em class="property">class </em><code class="descclassname">aiohttp.helpers.</code><code class="descname">FormData</code><span class="sig-paren">(</span><em>fields=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/helpers.html#FormData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.FormData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Helper class for multipart/form-data and
+application/x-www-form-urlencoded body generation.</p>
+<dl class="method">
+<dt id="aiohttp.helpers.FormData.add_field">
+<code class="descname">add_field</code><span class="sig-paren">(</span><em>name</em>, <em>value</em>, <em>*</em>, <em>content_type=None</em>, <em>filename=None</em>, <em>content_transfer_encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/helpers.html#FormData.add_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.FormData.add_field" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.helpers.FormData.add_fields">
+<code class="descname">add_fields</code><span class="sig-paren">(</span><em>*fields</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/helpers.html#FormData.add_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.FormData.add_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.helpers.FormData.content_type">
+<code class="descname">content_type</code><a class="headerlink" href="#aiohttp.helpers.FormData.content_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.helpers.FormData.is_multipart">
+<code class="descname">is_multipart</code><a class="headerlink" href="#aiohttp.helpers.FormData.is_multipart" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.helpers.parse_mimetype">
+<code class="descclassname">aiohttp.helpers.</code><code class="descname">parse_mimetype</code><span class="sig-paren">(</span><em>mimetype</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/helpers.html#parse_mimetype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.helpers.parse_mimetype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses a MIME type into its components.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>mimetype</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; MIME type</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">4 element tuple for MIME type, subtype, suffix and parameters</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)">tuple</a></td>
+</tr>
+</tbody>
+</table>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_mimetype</span><span class="p">(</span><span class="s">&#39;text/html; charset=utf-8&#39;</span><span class="p">)</span>
+<span class="go">(&#39;text&#39;, &#39;html&#39;, &#39;&#39;, {&#39;charset&#39;: &#39;utf-8&#39;})</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.multipart">
+<span id="aiohttp-multipart-module"></span><h2>aiohttp.multipart module<a class="headerlink" href="#module-aiohttp.multipart" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.multipart.MultipartReader">
+<em class="property">class </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">MultipartReader</code><span class="sig-paren">(</span><em>headers</em>, <em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Multipart body reader.</p>
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartReader.at_eof">
+<code class="descname">at_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader.at_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader.at_eof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="docutils literal"><span class="pre">True</span></code> if the final boundary was reached or
+<code class="docutils literal"><span class="pre">False</span></code> otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)">bool</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartReader.fetch_next_part">
+<code class="descname">fetch_next_part</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader.fetch_next_part"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader.fetch_next_part" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the next body part reader.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="aiohttp.multipart.MultipartReader.from_response">
+<em class="property">classmethod </em><code class="descname">from_response</code><span class="sig-paren">(</span><em>response</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader.from_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader.from_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs reader instance from HTTP response.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>response</strong> &#8211; <code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code> instance</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.MultipartReader.multipart_reader_cls">
+<code class="descname">multipart_reader_cls</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.multipart.MultipartReader.multipart_reader_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multipart reader class, used to handle multipart/* body parts.
+None points to type(self)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartReader.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader.next" title="Permalink to this definition">¶</a></dt>
+<dd><p>Emits the next multipart body part.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.MultipartReader.part_reader_cls">
+<code class="descname">part_reader_cls</code><a class="headerlink" href="#aiohttp.multipart.MultipartReader.part_reader_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Body part reader class for non multipart/* content types.</p>
+<p>alias of <a class="reference internal" href="#aiohttp.multipart.BodyPartReader" title="aiohttp.multipart.BodyPartReader"><code class="xref py py-class docutils literal"><span class="pre">BodyPartReader</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartReader.release">
+<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartReader.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartReader.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads all the body parts to the void till the final boundary.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.MultipartReader.response_wrapper_cls">
+<code class="descname">response_wrapper_cls</code><a class="headerlink" href="#aiohttp.multipart.MultipartReader.response_wrapper_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Response wrapper, used when multipart readers constructs from response.</p>
+<p>alias of <code class="xref py py-class docutils literal"><span class="pre">MultipartResponseWrapper</span></code></p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.multipart.MultipartWriter">
+<em class="property">class </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">MultipartWriter</code><span class="sig-paren">(</span><em>subtype='mixed'</em>, <em>boundary=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Multipart body writer.</p>
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartWriter.append">
+<code class="descname">append</code><span class="sig-paren">(</span><em>obj</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartWriter.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a new body part to multipart writer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartWriter.append_form">
+<code class="descname">append_form</code><span class="sig-paren">(</span><em>obj</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartWriter.append_form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.append_form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper to append form urlencoded part.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartWriter.append_json">
+<code class="descname">append_json</code><span class="sig-paren">(</span><em>obj</em>, <em>headers=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartWriter.append_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.append_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper to append JSON part.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.MultipartWriter.boundary">
+<code class="descname">boundary</code><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.boundary" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.MultipartWriter.part_writer_cls">
+<code class="descname">part_writer_cls</code><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.part_writer_cls" title="Permalink to this definition">¶</a></dt>
+<dd><p>Body part reader class for non multipart/* content types.</p>
+<p>alias of <a class="reference internal" href="#aiohttp.multipart.BodyPartWriter" title="aiohttp.multipart.BodyPartWriter"><code class="xref py py-class docutils literal"><span class="pre">BodyPartWriter</span></code></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.MultipartWriter.serialize">
+<code class="descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#MultipartWriter.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.MultipartWriter.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields multipart byte chunks.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.multipart.BodyPartReader">
+<em class="property">class </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">BodyPartReader</code><span class="sig-paren">(</span><em>boundary</em>, <em>headers</em>, <em>content</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Multipart reader for single body part.</p>
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.at_eof">
+<code class="descname">at_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.at_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.at_eof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <code class="docutils literal"><span class="pre">True</span></code> if the boundary was reached or
+<code class="docutils literal"><span class="pre">False</span></code> otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)">bool</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.BodyPartReader.chunk_size">
+<code class="descname">chunk_size</code><em class="property"> = 8192</em><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.chunk_size" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.decode">
+<code class="descname">decode</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.decode"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes data according the specified <cite>Content-Encoding</cite>
+or <cite>Content-Transfer-Encoding</cite> headers value.</p>
+<p>Supports <code class="docutils literal"><span class="pre">gzip</span></code>, <code class="docutils literal"><span class="pre">deflate</span></code> and <code class="docutils literal"><span class="pre">identity</span></code> encodings for
+<cite>Content-Encoding</cite> header.</p>
+<p>Supports <code class="docutils literal"><span class="pre">base64</span></code>, <code class="docutils literal"><span class="pre">quoted-printable</span></code> encodings for
+<cite>Content-Transfer-Encoding</cite> header.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)"><em>bytearray</em></a>) &#8211; Data to decode.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Raises:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.5)"><code class="xref py py-exc docutils literal"><span class="pre">RuntimeError</span></code></a> - if encoding is unknown.</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)">bytes</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.multipart.BodyPartReader.filename">
+<code class="descname">filename</code><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns filename specified in Content-Disposition header or <code class="docutils literal"><span class="pre">None</span></code>
+if missed or header is malformed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.form">
+<code class="descname">form</code><span class="sig-paren">(</span><em>*</em>, <em>encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.form"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.form" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lke <a class="reference internal" href="#aiohttp.multipart.BodyPartReader.read" title="aiohttp.multipart.BodyPartReader.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>, but assumes that body parts contains form
+urlencoded data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Custom form encoding. Overrides specified
+in charset param of <cite>Content-Type</cite> header</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.get_charset">
+<code class="descname">get_charset</code><span class="sig-paren">(</span><em>default=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.get_charset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.get_charset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns charset parameter from <code class="docutils literal"><span class="pre">Content-Type</span></code> header or default.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.json">
+<code class="descname">json</code><span class="sig-paren">(</span><em>*</em>, <em>encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lke <a class="reference internal" href="#aiohttp.multipart.BodyPartReader.read" title="aiohttp.multipart.BodyPartReader.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>, but assumes that body parts contains JSON data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Custom JSON encoding. Overrides specified
+in charset param of <cite>Content-Type</cite> header</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.next">
+<code class="descname">next</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.next"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.next" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>*</em>, <em>decode=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads body part data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>decode</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Decodes data following by encoding
+method from <cite>Content-Encoding</cite> header. If it missed
+data remains untouched</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)">bytearray</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.read_chunk">
+<code class="descname">read_chunk</code><span class="sig-paren">(</span><em>size=8192</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.read_chunk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.read_chunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads body part content chunk of the specified size.
+The body part must has <cite>Content-Length</cite> header with proper value.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>size</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; chunk size</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)">bytearray</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.readline">
+<code class="descname">readline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.readline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.readline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads body part by line by line.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)">bytearray</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.release">
+<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lke <a class="reference internal" href="#aiohttp.multipart.BodyPartReader.read" title="aiohttp.multipart.BodyPartReader.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>, but reads all the data to the void.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/constants.html#None" title="(in Python v3.5)">None</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartReader.text">
+<code class="descname">text</code><span class="sig-paren">(</span><em>*</em>, <em>encoding=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartReader.text"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartReader.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lke <a class="reference internal" href="#aiohttp.multipart.BodyPartReader.read" title="aiohttp.multipart.BodyPartReader.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>, but assumes that body part contains text data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Custom text encoding. Overrides specified
+in charset param of <cite>Content-Type</cite> header</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)">str</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.multipart.BodyPartWriter">
+<em class="property">class </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">BodyPartWriter</code><span class="sig-paren">(</span><em>obj</em>, <em>headers=None</em>, <em>*</em>, <em>chunk_size=8192</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Multipart writer for single body part.</p>
+<dl class="attribute">
+<dt id="aiohttp.multipart.BodyPartWriter.filename">
+<code class="descname">filename</code><a class="headerlink" href="#aiohttp.multipart.BodyPartWriter.filename" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns filename specified in Content-Disposition header or <code class="docutils literal"><span class="pre">None</span></code>
+if missed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartWriter.serialize">
+<code class="descname">serialize</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartWriter.serialize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartWriter.serialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yields byte chunks for body part.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.multipart.BodyPartWriter.set_content_disposition">
+<code class="descname">set_content_disposition</code><span class="sig-paren">(</span><em>disptype</em>, <em>**params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#BodyPartWriter.set_content_disposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BodyPartWriter.set_content_disposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets <code class="docutils literal"><span class="pre">Content-Disposition</span></code> header.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>disptype</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Disposition type: inline, attachment, form-data.
+Should be valid extension token (see RFC 2183)</li>
+<li><strong>params</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; Disposition params</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.multipart.BadContentDispositionHeader">
+<em class="property">exception </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">BadContentDispositionHeader</code><a class="reference internal" href="_modules/aiohttp/multipart.html#BadContentDispositionHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BadContentDispositionHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#RuntimeWarning" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">RuntimeWarning</span></code></a></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.multipart.BadContentDispositionParam">
+<em class="property">exception </em><code class="descclassname">aiohttp.multipart.</code><code class="descname">BadContentDispositionParam</code><a class="reference internal" href="_modules/aiohttp/multipart.html#BadContentDispositionParam"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.BadContentDispositionParam" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#RuntimeWarning" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">RuntimeWarning</span></code></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.multipart.parse_content_disposition">
+<code class="descclassname">aiohttp.multipart.</code><code class="descname">parse_content_disposition</code><span class="sig-paren">(</span><em>header</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#parse_content_disposition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.parse_content_disposition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.multipart.content_disposition_filename">
+<code class="descclassname">aiohttp.multipart.</code><code class="descname">content_disposition_filename</code><span class="sig-paren">(</span><em>params</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/multipart.html#content_disposition_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.multipart.content_disposition_filename" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.parsers">
+<span id="aiohttp-parsers-module"></span><h2>aiohttp.parsers module<a class="headerlink" href="#module-aiohttp.parsers" title="Permalink to this headline">¶</a></h2>
+<p>Parser is a generator function (NOT coroutine).</p>
+<p>Parser receives data with generator&#8217;s send() method and sends data to
+destination DataQueue. Parser receives ParserBuffer and DataQueue objects
+as a parameters of the parser call, all subsequent send() calls should
+send bytes objects. Parser sends parsed <cite>term</cite> to destination buffer with
+DataQueue.feed_data() method. DataQueue object should implement two methods.
+feed_data() - parser uses this method to send parsed protocol data.
+feed_eof() - parser uses this method for indication of end of parsing stream.
+To indicate end of incoming data stream EofStream exception should be sent
+into parser. Parser could throw exceptions.</p>
+<p>There are three stages:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">Data flow chain:</p>
+<blockquote>
+<div><ol class="arabic">
+<li><p class="first">Application creates StreamParser object for storing incoming data.</p>
+</li>
+<li><p class="first">StreamParser creates ParserBuffer as internal data buffer.</p>
+</li>
+<li><p class="first">Application create parser and set it into stream buffer:</p>
+<blockquote>
+<div><p>parser = HttpRequestParser()
+data_queue = stream.set_parser(parser)</p>
+</div></blockquote>
+</li>
+</ol>
+<ol class="arabic" start="3">
+<li><p class="first">At this stage StreamParser creates DataQueue object and passes it
+and internal buffer into parser as an arguments.</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>def set_parser(self, parser):</dt>
+<dd><p class="first last">output = DataQueue()
+self.p = parser(output, self._input)
+return output</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+<li><p class="first">Application waits data on output.read()</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>while True:</dt>
+<dd><p class="first last">msg = yield from output.read()
+...</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first">Data flow:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>asyncio&#8217;s transport reads data from socket and sends data to protocol
+with data_received() call.</li>
+<li>Protocol sends data to StreamParser with feed_data() call.</li>
+<li>StreamParser sends data into parser with generator&#8217;s send() method.</li>
+<li>Parser processes incoming data and sends parsed data
+to DataQueue with feed_data()</li>
+<li>Application received parsed data from DataQueue.read()</li>
+</ol>
+</div></blockquote>
+</li>
+<li><p class="first">Eof:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>StreamParser receives eof with feed_eof() call.</li>
+<li>StreamParser throws EofStream exception into parser.</li>
+<li>Then it unsets parser.</li>
+</ol>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>_SocketSocketTransport -&gt;</dt>
+<dd>-&gt; &#8220;protocol&#8221; -&gt; StreamParser -&gt; &#8220;parser&#8221; -&gt; DataQueue &lt;- &#8220;application&#8221;</dd>
+</dl>
+<dl class="exception">
+<dt id="aiohttp.parsers.EofStream">
+<em class="property">exception </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">EofStream</code><a class="reference internal" href="_modules/aiohttp/streams.html#EofStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.EofStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>eof stream indication.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.parsers.StreamParser">
+<em class="property">class </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">StreamParser</code><span class="sig-paren">(</span><em>*</em>, <em>loop=None</em>, <em>buf=None</em>, <em>limit=65536</em>, <em>eof_exc_class=&lt;class 'RuntimeError'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>StreamParser manages incoming bytes stream and protocol parsers.</p>
+<p>StreamParser uses ParserBuffer as internal buffer.</p>
+<p>set_parser() sets current parser, it creates DataQueue object
+and sends ParserBuffer and DataQueue into parser generator.</p>
+<p>unset_parser() sends EofStream into parser and then removes it.</p>
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.at_eof">
+<code class="descname">at_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.at_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.at_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>send data to current parser or store in buffer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.feed_eof">
+<code class="descname">feed_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.feed_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.feed_eof" title="Permalink to this definition">¶</a></dt>
+<dd><p>send eof to all parsers, recursively.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.parsers.StreamParser.output">
+<code class="descname">output</code><a class="headerlink" href="#aiohttp.parsers.StreamParser.output" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.set_exception">
+<code class="descname">set_exception</code><span class="sig-paren">(</span><em>exc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.set_exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.set_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.set_parser">
+<code class="descname">set_parser</code><span class="sig-paren">(</span><em>parser</em>, <em>output=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.set_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.set_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>set parser to stream. return parser&#8217;s DataQueue.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.set_transport">
+<code class="descname">set_transport</code><span class="sig-paren">(</span><em>transport</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.set_transport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.set_transport" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamParser.unset_parser">
+<code class="descname">unset_parser</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamParser.unset_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamParser.unset_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>unset parser, send eof to the parser and then remove it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.parsers.StreamProtocol">
+<em class="property">class </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">StreamProtocol</code><span class="sig-paren">(</span><em>*</em>, <em>loop=None</em>, <em>disconnect_error=&lt;class 'RuntimeError'&gt;</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">asyncio.streams.FlowControlMixin</span></code>, <code class="xref py py-class docutils literal"><span class="pre">asyncio.protocols.Protocol</span></code></p>
+<p>Helper class to adapt between Protocol and StreamReader.</p>
+<dl class="method">
+<dt id="aiohttp.parsers.StreamProtocol.connection_lost">
+<code class="descname">connection_lost</code><span class="sig-paren">(</span><em>exc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol.connection_lost"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol.connection_lost" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamProtocol.connection_made">
+<code class="descname">connection_made</code><span class="sig-paren">(</span><em>transport</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol.connection_made"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol.connection_made" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamProtocol.data_received">
+<code class="descname">data_received</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol.data_received"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol.data_received" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamProtocol.eof_received">
+<code class="descname">eof_received</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol.eof_received"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol.eof_received" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.StreamProtocol.is_connected">
+<code class="descname">is_connected</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#StreamProtocol.is_connected"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.StreamProtocol.is_connected" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.parsers.ParserBuffer">
+<em class="property">class </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">ParserBuffer</code><span class="sig-paren">(</span><em>*args</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytearray</span></code></a></p>
+<p>ParserBuffer is a bytearray extension.</p>
+<p>ParserBuffer provides helper methods for parsers.</p>
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>read() reads specified amount of bytes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.readsome">
+<code class="descname">readsome</code><span class="sig-paren">(</span><em>size=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.readsome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.readsome" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads size of less amount of bytes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.readuntil">
+<code class="descname">readuntil</code><span class="sig-paren">(</span><em>stop</em>, <em>limit=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.readuntil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.readuntil" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.set_exception">
+<code class="descname">set_exception</code><span class="sig-paren">(</span><em>exc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.set_exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.set_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.skip">
+<code class="descname">skip</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.skip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.skip" title="Permalink to this definition">¶</a></dt>
+<dd><p>skip() skips specified amount of bytes.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.skipuntil">
+<code class="descname">skipuntil</code><span class="sig-paren">(</span><em>stop</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.skipuntil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.skipuntil" title="Permalink to this definition">¶</a></dt>
+<dd><p>skipuntil() reads until <cite>stop</cite> bytes sequence.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.wait">
+<code class="descname">wait</code><span class="sig-paren">(</span><em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.wait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.wait" title="Permalink to this definition">¶</a></dt>
+<dd><p>wait() waits for specified amount of bytes
+then returns data without changing internal buffer.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.parsers.ParserBuffer.waituntil">
+<code class="descname">waituntil</code><span class="sig-paren">(</span><em>stop</em>, <em>limit=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ParserBuffer.waituntil"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ParserBuffer.waituntil" title="Permalink to this definition">¶</a></dt>
+<dd><p>waituntil() reads until <cite>stop</cite> bytes sequence.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.parsers.LinesParser">
+<em class="property">class </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">LinesParser</code><span class="sig-paren">(</span><em>limit=65536</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#LinesParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.LinesParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Lines parser.</p>
+<p>Lines parser splits a bytes stream into a chunks of data, each chunk ends
+with n symbol.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.parsers.ChunksParser">
+<em class="property">class </em><code class="descclassname">aiohttp.parsers.</code><code class="descname">ChunksParser</code><span class="sig-paren">(</span><em>size=8192</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/parsers.html#ChunksParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.parsers.ChunksParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Chunks parser.</p>
+<p>Chunks parser splits a bytes stream into a specified
+size chunks of data.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.protocol">
+<span id="aiohttp-protocol-module"></span><h2>aiohttp.protocol module<a class="headerlink" href="#module-aiohttp.protocol" title="Permalink to this headline">¶</a></h2>
+<p>Http related parsers and protocol.</p>
+<dl class="class">
+<dt id="aiohttp.protocol.HttpMessage">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpMessage</code><span class="sig-paren">(</span><em>transport</em>, <em>version</em>, <em>close</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>HttpMessage allows to write headers and payload to a stream.</p>
+<p>For example, lets say we want to read file then compress it with deflate
+compression and then send it with chunked transfer encoding, code may look
+like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">transport</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We have to use deflate compression first:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">add_compression_filter</span><span class="p">(</span><span class="s">&#39;deflate&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Then we want to split output stream into chunks of 1024 bytes size:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">add_chunking_filter</span><span class="p">(</span><span class="mi">1024</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>We can add headers to response with add_headers() method. add_headers()
+does not send data to transport, send_headers() sends request/response
+line and then sends headers:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">add_headers</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">(</span><span class="s">&#39;Content-Disposition&#39;</span><span class="p">,</span> <span class="s">&#39;attachment; filename=&quot;...&quot;&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">send_headers</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Now we can use chunked writer to write stream to a network stream.
+First call to write() method sends response status line and headers,
+add_header() and add_headers() method unavailable at this stage:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;...&#39;</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<span class="gp">... </span>    <span class="n">chunk</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+<span class="gp">... </span>    <span class="k">while</span> <span class="n">chunk</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="n">response</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+<span class="gp">... </span>        <span class="n">chunk</span> <span class="o">=</span> <span class="n">fp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8192</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">response</span><span class="o">.</span><span class="n">write_eof</span><span class="p">()</span>
+</pre></div>
+</div>
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.HOP_HEADERS">
+<code class="descname">HOP_HEADERS</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.HOP_HEADERS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.SERVER_SOFTWARE">
+<code class="descname">SERVER_SOFTWARE</code><em class="property"> = 'Python/3.4 aiohttp/0.18.2'</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.SERVER_SOFTWARE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.add_chunking_filter">
+<code class="descname">add_chunking_filter</code><span class="sig-paren">(</span><em>chunk_size=16384</em>, <em>*</em>, <em>EOF_MARKER=&lt;object object&gt;</em>, <em>EOL_MARKER=&lt;object object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.add_chunking_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.add_chunking_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split incoming stream into chunks.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.add_compression_filter">
+<code class="descname">add_compression_filter</code><span class="sig-paren">(</span><em>encoding='deflate'</em>, <em>*</em>, <em>EOF_MARKER=&lt;object object&gt;</em>, <em>EOL_MARKER=&lt;object object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.add_compression_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.add_compression_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compress incoming stream with deflate or gzip encoding.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.add_header">
+<code class="descname">add_header</code><span class="sig-paren">(</span><em>name</em>, <em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.add_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.add_header" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyze headers. Calculate content length,
+removes hop headers, etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.add_headers">
+<code class="descname">add_headers</code><span class="sig-paren">(</span><em>*headers</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.add_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.add_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds headers to a http message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.enable_chunked_encoding">
+<code class="descname">enable_chunked_encoding</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.enable_chunked_encoding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.enable_chunked_encoding" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.filter">
+<code class="descname">filter</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.filter" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.force_close">
+<code class="descname">force_close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.force_close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.force_close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.has_chunked_hdr">
+<code class="descname">has_chunked_hdr</code><em class="property"> = False</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.has_chunked_hdr" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.is_headers_sent">
+<code class="descname">is_headers_sent</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.is_headers_sent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.is_headers_sent" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.keep_alive">
+<code class="descname">keep_alive</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.keep_alive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.keep_alive" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.send_headers">
+<code class="descname">send_headers</code><span class="sig-paren">(</span><em>_sep=': '</em>, <em>_end='\r\n'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.send_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.send_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes headers to a stream. Constructs payload writer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.status">
+<code class="descname">status</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.status_line">
+<code class="descname">status_line</code><em class="property"> = b''</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.status_line" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.upgrade">
+<code class="descname">upgrade</code><em class="property"> = False</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.upgrade" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.websocket">
+<code class="descname">websocket</code><em class="property"> = False</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.websocket" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>chunk</em>, <em>*</em>, <em>drain=False</em>, <em>EOF_MARKER=&lt;object object&gt;</em>, <em>EOL_MARKER=&lt;object object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.write" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes chunk of data to a stream by using different writers.</p>
+<p>writer uses filter to modify chunk of data.
+write_eof() indicates end of stream.
+writer can&#8217;t be used after write_eof() method being called.
+write() return drain future.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpMessage.write_eof">
+<code class="descname">write_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpMessage.write_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpMessage.write_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpMessage.writer">
+<code class="descname">writer</code><em class="property"> = None</em><a class="headerlink" href="#aiohttp.protocol.HttpMessage.writer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.Request">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">Request</code><span class="sig-paren">(</span><em>transport</em>, <em>method</em>, <em>path</em>, <em>http_version=HttpVersion(major=1</em>, <em>minor=1)</em>, <em>close=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#Request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.Request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.protocol.HttpMessage" title="aiohttp.protocol.HttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.protocol.HttpMessage</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.protocol.Request.HOP_HEADERS">
+<code class="descname">HOP_HEADERS</code><em class="property"> = ()</em><a class="headerlink" href="#aiohttp.protocol.Request.HOP_HEADERS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.Response">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">Response</code><span class="sig-paren">(</span><em>transport</em>, <em>status</em>, <em>http_version=HttpVersion(major=1</em>, <em>minor=1)</em>, <em>close=False</em>, <em>reason=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#Response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.Response" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.protocol.HttpMessage" title="aiohttp.protocol.HttpMessage"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.protocol.HttpMessage</span></code></a></p>
+<p>Create http response message.</p>
+<p>Transport is a socket stream transport. status is a response status code,
+status has to be integer value. http_version is a tuple that represents
+http version, (1, 0) stands for HTTP/1.0 and (1, 1) is for HTTP/1.1</p>
+<dl class="attribute">
+<dt id="aiohttp.protocol.Response.HOP_HEADERS">
+<code class="descname">HOP_HEADERS</code><em class="property"> = ()</em><a class="headerlink" href="#aiohttp.protocol.Response.HOP_HEADERS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="aiohttp.protocol.Response.calc_reason">
+<em class="property">static </em><code class="descname">calc_reason</code><span class="sig-paren">(</span><em>status</em>, <em>*</em>, <em>_RESPONSES={428: ('Precondition Required'</em>, <em>'The origin server requires the request to be conditional.')</em>, <em>301: ('Moved Permanently'</em>, <em>'Object moved permanently -- see URI list')</em>, <em>400: ('Bad Request'</em>, <em>'Bad request syntax or unsupported method')</em>, <em>401: ('Unauthorized'</em>, <em>'No permission -- see authorization schemes')</em>, <em>402: ('Payment Required'</em>, <em>'No payment -- see charging schemes')</em>, <em>403: ('Forbidden'</em>, <em>'Request forbidden -- authorization will not help')</em>, <em>404: ('Not Found'</em>, <em>'Nothing matches the given URI')</em>, <em>405: ('Method Not Allowed'</em>, <em>'Specified method is invalid for this resource.')</em>, <em>406: ('Not Acceptable'</em>, <em>'URI not available in preferred format.')</em>, <em>407: ('Proxy Authentication Required'</em>, <em>'You must authenticate with this proxy before proceeding.')</em>, <em>408: ('Request Timeout'</em>, <em>'Request timed out; try again later.')</em>, <em>409: ('Conflict'</em>, <em>'Request conflict.')</em>, <em>410: ('Gone'</em>, <em>'URI no longer exists and has been permanently removed.')</em>, <em>411: ('Length Required'</em>, <em>'Client must specify Content-Length.')</em>, <em>412: ('Precondition Failed'</em>, <em>'Precondition in headers is false.')</em>, <em>413: ('Request Entity Too Large'</em>, <em>'Entity is too large.')</em>, <em>414: ('Request-URI Too Long'</em>, <em>'URI is too long.')</em>, <em>415: ('Unsupported Media Type'</em>, <em>'Entity body in unsupported format.')</em>, <em>416: ('Requested Range Not Satisfiable'</em>, <em>'Cannot satisfy request range.')</em>, <em>417: ('Expectation Failed'</em>, <em>'Expect condition could not be satisfied.')</em>, <em>300: ('Multiple Choices'</em>, <em>'Object has several resources -- see URI list')</em>, <em>429: ('Too Many Requests'</em>, <em>'The user has sent too many requests in a given amount of time (&quot;rate limiting&quot;).')</em>, <em>302: ('Found'</em>, <em>'Object moved temporarily -- see URI list')</em>, <em>431: ('Request Header Fields Too Large'</em>, <em>'The server is unwilling to process the request because its header fields are too large.')</em>, <em>304: ('Not Modified'</em>, <em>'Document has not changed since given time')</em>, <em>305: ('Use Proxy'</em>, <em>'You must use proxy specified in Location to access this resource.')</em>, <em>307: ('Temporary Redirect'</em>, <em>'Object moved temporarily -- see URI list')</em>, <em>200: ('OK'</em>, <em>'Request fulfilled</em>, <em>document follows')</em>, <em>201: ('Created'</em>, <em>'Document created</em>, <em>URL follows')</em>, <em>202: ('Accepted'</em>, <em>'Request accepted</em>, <em>processing continues off-line')</em>, <em>203: ('Non-Authoritative Information'</em>, <em>'Request fulfilled from cache')</em>, <em>204: ('No Content'</em>, <em>'Request fulfilled</em>, <em>nothing follows')</em>, <em>205: ('Reset Content'</em>, <em>'Clear input form for further input.')</em>, <em>206: ('Partial Content'</em>, <em>'Partial content follows.')</em>, <em>303: ('See Other'</em>, <em>'Object moved -- see Method and URL list')</em>, <em>100: ('Continue'</em>, <em>'Request received</em>, <em>please continue')</em>, <em>101: ('Switching Protocols'</em>, <em>'Switching to new protocol; obey Upgrade header')</em>, <em>500: ('Internal Server Error'</em>, <em>'Server got itself in trouble')</em>, <em>501: ('Not Implemented'</em>, <em>'Server does not support this operation')</em>, <em>502: ('Bad Gateway'</em>, <em>'Invalid responses from another server/proxy.')</em>, <em>503: ('Service Unavailable'</em>, <em>'The server cannot process the request due to a high load')</em>, <em>504: ('Gateway Timeout'</em>, <em>'The gateway server did not receive a timely response')</em>, <em>505: ('HTTP Version Not Supported'</em>, <em>'Cannot fulfill request.')</em>, <em>511: ('Network Authentication Required'</em>, <em>'The client needs to authenticate to gain network access.')}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#Response.calc_reason"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.Response.calc_reason" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.HttpVersion">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpVersion</code><span class="sig-paren">(</span><em>major</em>, <em>minor</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.protocol.HttpVersion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpVersion.major">
+<code class="descname">major</code><a class="headerlink" href="#aiohttp.protocol.HttpVersion.major" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.HttpVersion.minor">
+<code class="descname">minor</code><a class="headerlink" href="#aiohttp.protocol.HttpVersion.minor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.RawRequestMessage">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">RawRequestMessage</code><span class="sig-paren">(</span><em>method</em>, <em>path</em>, <em>version</em>, <em>headers</em>, <em>should_close</em>, <em>compression</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.compression">
+<code class="descname">compression</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.headers">
+<code class="descname">headers</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.method">
+<code class="descname">method</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.method" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.path">
+<code class="descname">path</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.should_close">
+<code class="descname">should_close</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.should_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawRequestMessage.version">
+<code class="descname">version</code><a class="headerlink" href="#aiohttp.protocol.RawRequestMessage.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.RawResponseMessage">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">RawResponseMessage</code><span class="sig-paren">(</span><em>version</em>, <em>code</em>, <em>reason</em>, <em>headers</em>, <em>should_close</em>, <em>compression</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.code">
+<code class="descname">code</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.code" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.compression">
+<code class="descname">compression</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.compression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.headers">
+<code class="descname">headers</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.reason">
+<code class="descname">reason</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.reason" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.should_close">
+<code class="descname">should_close</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.should_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.protocol.RawResponseMessage.version">
+<code class="descname">version</code><a class="headerlink" href="#aiohttp.protocol.RawResponseMessage.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.HttpPrefixParser">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpPrefixParser</code><span class="sig-paren">(</span><em>allowed_methods=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpPrefixParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpPrefixParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>Waits for &#8216;HTTP&#8217; prefix (non destructive)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.HttpRequestParser">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpRequestParser</code><span class="sig-paren">(</span><em>max_line_size=8190</em>, <em>max_headers=32768</em>, <em>max_field_size=8190</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpRequestParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpRequestParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">aiohttp.protocol.HttpParser</span></code></p>
+<p>Read request status line. Exception errors.BadStatusLine
+could be raised in case of any errors in status line.
+Returns RawRequestMessage.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.HttpResponseParser">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpResponseParser</code><span class="sig-paren">(</span><em>max_line_size=8190</em>, <em>max_headers=32768</em>, <em>max_field_size=8190</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpResponseParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpResponseParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">aiohttp.protocol.HttpParser</span></code></p>
+<p>Read response status line and headers.</p>
+<p>BadStatusLine could be raised in case of any errors in status line.
+Returns RawResponseMessage</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.protocol.HttpPayloadParser">
+<em class="property">class </em><code class="descclassname">aiohttp.protocol.</code><code class="descname">HttpPayloadParser</code><span class="sig-paren">(</span><em>message</em>, <em>length=None</em>, <em>compression=True</em>, <em>readall=False</em>, <em>response_with_body=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpPayloadParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpPayloadParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.protocol.HttpPayloadParser.parse_chunked_payload">
+<code class="descname">parse_chunked_payload</code><span class="sig-paren">(</span><em>out</em>, <em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpPayloadParser.parse_chunked_payload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpPayloadParser.parse_chunked_payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chunked transfer encoding parser.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpPayloadParser.parse_eof_payload">
+<code class="descname">parse_eof_payload</code><span class="sig-paren">(</span><em>out</em>, <em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpPayloadParser.parse_eof_payload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpPayloadParser.parse_eof_payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read all bytes until eof.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.protocol.HttpPayloadParser.parse_length_payload">
+<code class="descname">parse_length_payload</code><span class="sig-paren">(</span><em>out</em>, <em>buf</em>, <em>length=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/protocol.html#HttpPayloadParser.parse_length_payload"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.protocol.HttpPayloadParser.parse_length_payload" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read specified amount of bytes.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.signals">
+<span id="aiohttp-signals-module"></span><h2>aiohttp.signals module<a class="headerlink" href="#module-aiohttp.signals" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.signals.BaseSignal">
+<em class="property">class </em><code class="descclassname">aiohttp.signals.</code><code class="descname">BaseSignal</code><a class="reference internal" href="_modules/aiohttp/signals.html#BaseSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.BaseSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">list</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.signals.BaseSignal.copy">
+<code class="descname">copy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#BaseSignal.copy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.BaseSignal.copy" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.signals.BaseSignal.sort">
+<code class="descname">sort</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#BaseSignal.sort"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.BaseSignal.sort" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.signals.DebugSignal">
+<em class="property">class </em><code class="descclassname">aiohttp.signals.</code><code class="descname">DebugSignal</code><a class="reference internal" href="_modules/aiohttp/signals.html#DebugSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.DebugSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.signals.BaseSignal" title="aiohttp.signals.BaseSignal"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.signals.BaseSignal</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.signals.DebugSignal.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>ordinal</em>, <em>name</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#DebugSignal.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.DebugSignal.send" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.signals.PostSignal">
+<em class="property">class </em><code class="descclassname">aiohttp.signals.</code><code class="descname">PostSignal</code><a class="reference internal" href="_modules/aiohttp/signals.html#PostSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.PostSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.signals.DebugSignal" title="aiohttp.signals.DebugSignal"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.signals.DebugSignal</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.signals.PreSignal">
+<em class="property">class </em><code class="descclassname">aiohttp.signals.</code><code class="descname">PreSignal</code><a class="reference internal" href="_modules/aiohttp/signals.html#PreSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.PreSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.signals.DebugSignal" title="aiohttp.signals.DebugSignal"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.signals.DebugSignal</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.signals.PreSignal.ordinal">
+<code class="descname">ordinal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#PreSignal.ordinal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.PreSignal.ordinal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.signals.Signal">
+<em class="property">class </em><code class="descclassname">aiohttp.signals.</code><code class="descname">Signal</code><span class="sig-paren">(</span><em>app</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#Signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.Signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.signals.BaseSignal" title="aiohttp.signals.BaseSignal"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.signals.BaseSignal</span></code></a></p>
+<p>Coroutine-based signal implementation.</p>
+<p>To connect a callback to a signal, use any list method.</p>
+<p>Signals are fired using the <a class="reference internal" href="#aiohttp.signals.Signal.send" title="aiohttp.signals.Signal.send"><code class="xref py py-meth docutils literal"><span class="pre">send()</span></code></a> coroutine, which takes named
+arguments.</p>
+<dl class="method">
+<dt id="aiohttp.signals.Signal.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/signals.html#Signal.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.signals.Signal.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends data to all registered receivers.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.streams">
+<span id="aiohttp-streams-module"></span><h2>aiohttp.streams module<a class="headerlink" href="#module-aiohttp.streams" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="aiohttp.streams.EofStream">
+<em class="property">exception </em><code class="descclassname">aiohttp.streams.</code><code class="descname">EofStream</code><a class="reference internal" href="_modules/aiohttp/streams.html#EofStream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.EofStream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>eof stream indication.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.StreamReader">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">StreamReader</code><span class="sig-paren">(</span><em>limit=65536</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">asyncio.streams.StreamReader</span></code>, <code class="xref py py-class docutils literal"><span class="pre">aiohttp.streams.AsyncStreamReaderMixin</span></code></p>
+<p>An enhancement of <a class="reference external" href="http://docs.python.org/3/library/asyncio-stream.html#asyncio.StreamReader" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">asyncio.StreamReader</span></code></a>.</p>
+<p>Supports asynchronous iteration by line, chunk or as available:</p>
+<div class="highlight-python"><div class="highlight"><pre>async for line in reader:
+    ...
+async for chunk in reader.iter_chunked(1024):
+    ...
+async for slice in reader.iter_any():
+    ...
+</pre></div>
+</div>
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.at_eof">
+<code class="descname">at_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.at_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.at_eof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the buffer is empty and &#8216;feed_eof&#8217; was called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.feed_eof">
+<code class="descname">feed_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.feed_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.feed_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.is_eof">
+<code class="descname">is_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.is_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.is_eof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if  &#8216;feed_eof&#8217; was called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>n=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.read_nowait">
+<code class="descname">read_nowait</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.read_nowait"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.read_nowait" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.readany">
+<code class="descname">readany</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.readany"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.readany" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.readexactly">
+<code class="descname">readexactly</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.readexactly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.readexactly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.readline">
+<code class="descname">readline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.readline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.readline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.set_exception">
+<code class="descname">set_exception</code><span class="sig-paren">(</span><em>exc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.set_exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.set_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.streams.StreamReader.total_bytes">
+<code class="descname">total_bytes</code><em class="property"> = 0</em><a class="headerlink" href="#aiohttp.streams.StreamReader.total_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.StreamReader.wait_eof">
+<code class="descname">wait_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#StreamReader.wait_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.StreamReader.wait_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.DataQueue">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">DataQueue</code><span class="sig-paren">(</span><em>*</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<p>DataQueue is a general-purpose blocking queue with one reader.</p>
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.at_eof">
+<code class="descname">at_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.at_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.at_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em>, <em>size=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.feed_eof">
+<code class="descname">feed_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.feed_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.feed_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.is_eof">
+<code class="descname">is_eof</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.is_eof"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.is_eof" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.DataQueue.set_exception">
+<code class="descname">set_exception</code><span class="sig-paren">(</span><em>exc</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#DataQueue.set_exception"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.DataQueue.set_exception" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.ChunksQueue">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">ChunksQueue</code><span class="sig-paren">(</span><em>*</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#ChunksQueue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.ChunksQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.streams.DataQueue" title="aiohttp.streams.DataQueue"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.streams.DataQueue</span></code></a></p>
+<p>Like a <a class="reference internal" href="#aiohttp.streams.DataQueue" title="aiohttp.streams.DataQueue"><code class="xref py py-class docutils literal"><span class="pre">DataQueue</span></code></a>, but for binary chunked data transfer.</p>
+<dl class="method">
+<dt id="aiohttp.streams.ChunksQueue.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#ChunksQueue.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.ChunksQueue.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.ChunksQueue.readany">
+<code class="descname">readany</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.streams.ChunksQueue.readany" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.FlowControlStreamReader">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">FlowControlStreamReader</code><span class="sig-paren">(</span><em>stream</em>, <em>limit=65536</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.streams.StreamReader" title="aiohttp.streams.StreamReader"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.streams.StreamReader</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlStreamReader.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em>, <em>size=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlStreamReader.read">
+<code class="descname">read</code><span class="sig-paren">(</span><em>n=-1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlStreamReader.readany">
+<code class="descname">readany</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader.readany"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader.readany" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlStreamReader.readexactly">
+<code class="descname">readexactly</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader.readexactly"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader.readexactly" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlStreamReader.readline">
+<code class="descname">readline</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlStreamReader.readline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlStreamReader.readline" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.FlowControlDataQueue">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">FlowControlDataQueue</code><span class="sig-paren">(</span><em>stream</em>, <em>*</em>, <em>limit=65536</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlDataQueue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlDataQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.streams.DataQueue" title="aiohttp.streams.DataQueue"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.streams.DataQueue</span></code></a></p>
+<p>FlowControlDataQueue resumes and pauses an underlying stream.</p>
+<p>It is a destination for parsed data.</p>
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlDataQueue.feed_data">
+<code class="descname">feed_data</code><span class="sig-paren">(</span><em>data</em>, <em>size</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlDataQueue.feed_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlDataQueue.feed_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlDataQueue.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlDataQueue.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlDataQueue.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.streams.FlowControlChunksQueue">
+<em class="property">class </em><code class="descclassname">aiohttp.streams.</code><code class="descname">FlowControlChunksQueue</code><span class="sig-paren">(</span><em>stream</em>, <em>*</em>, <em>limit=65536</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlChunksQueue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlChunksQueue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#aiohttp.streams.FlowControlDataQueue" title="aiohttp.streams.FlowControlDataQueue"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.streams.FlowControlDataQueue</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlChunksQueue.read">
+<code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/streams.html#FlowControlChunksQueue.read"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.streams.FlowControlChunksQueue.read" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.streams.FlowControlChunksQueue.readany">
+<code class="descname">readany</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.streams.FlowControlChunksQueue.readany" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.websocket">
+<span id="aiohttp-websocket-module"></span><h2>aiohttp.websocket module<a class="headerlink" href="#module-aiohttp.websocket" title="Permalink to this headline">¶</a></h2>
+<p>WebSocket protocol versions 13 and 8.</p>
+<dl class="function">
+<dt id="aiohttp.websocket.WebSocketParser">
+<code class="descclassname">aiohttp.websocket.</code><code class="descname">WebSocketParser</code><span class="sig-paren">(</span><em>out</em>, <em>buf</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketParser" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.websocket.WebSocketWriter">
+<em class="property">class </em><code class="descclassname">aiohttp.websocket.</code><code class="descname">WebSocketWriter</code><span class="sig-paren">(</span><em>writer</em>, <em>*</em>, <em>use_mask=False</em>, <em>random=&lt;random.Random object at 0x1abb998&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketWriter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketWriter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/functions.html#object" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">object</span></code></a></p>
+<dl class="method">
+<dt id="aiohttp.websocket.WebSocketWriter.close">
+<code class="descname">close</code><span class="sig-paren">(</span><em>code=1000</em>, <em>message=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketWriter.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketWriter.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the websocket, sending the specified code and message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.websocket.WebSocketWriter.ping">
+<code class="descname">ping</code><span class="sig-paren">(</span><em>message=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketWriter.ping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketWriter.ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send ping message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.websocket.WebSocketWriter.pong">
+<code class="descname">pong</code><span class="sig-paren">(</span><em>message=b''</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketWriter.pong"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketWriter.pong" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send pong message.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.websocket.WebSocketWriter.send">
+<code class="descname">send</code><span class="sig-paren">(</span><em>message</em>, <em>binary=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketWriter.send"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketWriter.send" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send a frame over the websocket with message as its payload.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.websocket.do_handshake">
+<code class="descclassname">aiohttp.websocket.</code><code class="descname">do_handshake</code><span class="sig-paren">(</span><em>method</em>, <em>headers</em>, <em>transport</em>, <em>protocols=()</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#do_handshake"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.do_handshake" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare WebSocket handshake.</p>
+<p>It return http response code, response headers, websocket parser,
+websocket writer. It does not perform any IO.</p>
+<p><cite>protocols</cite> is a sequence of known protocols. On successful handshake,
+the returned response headers contain the first protocol in this list
+which the server also knows.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="aiohttp.websocket.Message">
+<em class="property">class </em><code class="descclassname">aiohttp.websocket.</code><code class="descname">Message</code><span class="sig-paren">(</span><em>tp</em>, <em>data</em>, <em>extra</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.websocket.Message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></a></p>
+<dl class="attribute">
+<dt id="aiohttp.websocket.Message.data">
+<code class="descname">data</code><a class="headerlink" href="#aiohttp.websocket.Message.data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.websocket.Message.extra">
+<code class="descname">extra</code><a class="headerlink" href="#aiohttp.websocket.Message.extra" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.websocket.Message.tp">
+<code class="descname">tp</code><a class="headerlink" href="#aiohttp.websocket.Message.tp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="aiohttp.websocket.WebSocketError">
+<em class="property">exception </em><code class="descclassname">aiohttp.websocket.</code><code class="descname">WebSocketError</code><span class="sig-paren">(</span><em>code</em>, <em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket.html#WebSocketError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.websocket.WebSocketError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></a></p>
+<p>WebSocket protocol parser error.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-aiohttp.wsgi">
+<span id="aiohttp-wsgi-module"></span><h2>aiohttp.wsgi module<a class="headerlink" href="#module-aiohttp.wsgi" title="Permalink to this headline">¶</a></h2>
+<p>wsgi server.</p>
+<dl class="docutils">
+<dt>TODO:</dt>
+<dd><ul class="first last simple">
+<li>proxy protocol</li>
+<li>x-forward security</li>
+<li>wsgi file support (os.sendfile)</li>
+</ul>
+</dd>
+</dl>
+<dl class="class">
+<dt id="aiohttp.wsgi.WSGIServerHttpProtocol">
+<em class="property">class </em><code class="descclassname">aiohttp.wsgi.</code><code class="descname">WSGIServerHttpProtocol</code><span class="sig-paren">(</span><em>app</em>, <em>readpayload=False</em>, <em>is_ssl=False</em>, <em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/wsgi.html#WSGIServerHttpProtocol"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.wsgi.WSGIServerHttpProtocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="server.html#aiohttp.server.ServerHttpProtocol" title="aiohttp.server.ServerHttpProtocol"><code class="xref py py-class docutils literal"><span class="pre">aiohttp.server.ServerHttpProtocol</span></code></a></p>
+<p>HTTP Server that implements the Python WSGI protocol.</p>
+<p>It uses &#8216;wsgi.async&#8217; of &#8216;True&#8217;. &#8216;wsgi.input&#8217; can behave differently
+depends on &#8216;readpayload&#8217; constructor parameter. If readpayload is set to
+True, wsgi server reads all incoming data into BytesIO object and
+sends it as &#8216;wsgi.input&#8217; environ var. If readpayload is set to false
+&#8216;wsgi.input&#8217; is a StreamReader and application should read incoming
+data with &#8220;yield from environ[&#8216;wsgi.input&#8217;].read()&#8221;. It defaults to False.</p>
+<dl class="attribute">
+<dt id="aiohttp.wsgi.WSGIServerHttpProtocol.SCRIPT_NAME">
+<code class="descname">SCRIPT_NAME</code><em class="property"> = ''</em><a class="headerlink" href="#aiohttp.wsgi.WSGIServerHttpProtocol.SCRIPT_NAME" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.wsgi.WSGIServerHttpProtocol.create_wsgi_environ">
+<code class="descname">create_wsgi_environ</code><span class="sig-paren">(</span><em>message</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/wsgi.html#WSGIServerHttpProtocol.create_wsgi_environ"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.wsgi.WSGIServerHttpProtocol.create_wsgi_environ" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.wsgi.WSGIServerHttpProtocol.create_wsgi_response">
+<code class="descname">create_wsgi_response</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/wsgi.html#WSGIServerHttpProtocol.create_wsgi_response"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.wsgi.WSGIServerHttpProtocol.create_wsgi_response" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.wsgi.WSGIServerHttpProtocol.handle_request">
+<code class="descname">handle_request</code><span class="sig-paren">(</span><em>message</em>, <em>payload</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/wsgi.html#WSGIServerHttpProtocol.handle_request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.wsgi.WSGIServerHttpProtocol.handle_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Handle a single HTTP request</p>
+</dd></dl>
+
+</dd></dl>
+
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/api";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Helpers API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.errors">aiohttp.errors module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.helpers">aiohttp.helpers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.multipart">aiohttp.multipart module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.parsers">aiohttp.parsers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.protocol">aiohttp.protocol module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.signals">aiohttp.signals module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.streams">aiohttp.streams module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.websocket">aiohttp.websocket module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-aiohttp.wsgi">aiohttp.wsgi module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/api.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

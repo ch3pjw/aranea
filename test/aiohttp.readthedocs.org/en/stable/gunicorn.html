@@ -1,0 +1,292 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Deployment using Gunicorn &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Helpers API" href="api.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/gunicorn.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "gunicorn",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "gunicorn";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="deployment-using-gunicorn">
+<h1>Deployment using Gunicorn<a class="headerlink" href="#deployment-using-gunicorn" title="Permalink to this headline">¶</a></h1>
+<p>aiohttp can be deployed using <a class="reference external" href="http://docs.gunicorn.org/en/latest/index.html">Gunicorn</a>, which is based on a
+pre-fork worker model.  Gunicorn launches your app as worker processes
+for handling incoming requests.</p>
+<div class="section" id="prepare-environment">
+<h2>Prepare environment<a class="headerlink" href="#prepare-environment" title="Permalink to this headline">¶</a></h2>
+<p>You firstly need to setup your deployment environment. This example is
+based on Ubuntu 14.04.</p>
+<p>Create a directory for your application:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; mkdir myapp
+&gt;&gt; cd myapp
+</pre></div>
+</div>
+<p>Ubuntu has a bug in pyenv, so to create virtualenv you need to do some
+extra manipulation:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; pyvenv-3.4 --without-pip venv
+&gt;&gt; source venv/bin/activate
+&gt;&gt; curl https://bootstrap.pypa.io/get-pip.py | python
+&gt;&gt; deactivate
+&gt;&gt; source venv/bin/activate
+</pre></div>
+</div>
+<p>Now that the virtual environment is ready, we&#8217;ll proceed to install
+aiohttp and gunicorn:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; pip install gunicorn
+&gt;&gt; pip install -e git+https://github.com/KeepSafe/aiohttp.git#egg=aiohttp
+</pre></div>
+</div>
+</div>
+<div class="section" id="application">
+<h2>Application<a class="headerlink" href="#application" title="Permalink to this headline">¶</a></h2>
+<p>Lets write a simple application, which we will save to file. We&#8217;ll
+name this file <em>my_app_module.py</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">aiohttp</span> <span class="kn">import</span> <span class="n">web</span>
+
+<span class="k">def</span> <span class="nf">index</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">web</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s">&quot;Welcome home!&quot;</span><span class="p">)</span>
+
+
+<span class="n">my_web_app</span> <span class="o">=</span> <span class="n">web</span><span class="o">.</span><span class="n">Application</span><span class="p">()</span>
+<span class="n">my_web_app</span><span class="o">.</span><span class="n">router</span><span class="o">.</span><span class="n">add_route</span><span class="p">(</span><span class="s">&#39;GET&#39;</span><span class="p">,</span> <span class="s">&#39;/&#39;</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="start-gunicorn">
+<h2>Start Gunicorn<a class="headerlink" href="#start-gunicorn" title="Permalink to this headline">¶</a></h2>
+<p>When <a class="reference external" href="http://docs.gunicorn.org/en/latest/run.html">Running Gunicorn</a>, you provide the name
+of the module, i.e. <em>my_app_module</em>, and the name of the app,
+i.e. <em>my_web_app</em>, along with other <a class="reference external" href="http://docs.gunicorn.org/en/latest/settings.html">Gunicorn Settings</a> provided as
+command line flags or in your config file.</p>
+<p>In this case, we will use:</p>
+<ul class="simple">
+<li>the <em>&#8216;&#8211;bind&#8217;</em> flag to set the server&#8217;s socket address;</li>
+<li>the <em>&#8216;&#8211;worker-class&#8217;</em> flag to tell Gunicorn that we want to use a</li>
+</ul>
+<p>custom worker subclass instead of one of the Gunicorn default worker
+types;
+* you may also want to use the <em>&#8216;&#8211;workers&#8217;</em> flag to tell Gunicorn how
+many worker processes to use for handling requests. (See the
+documentation for recommendations on <a class="reference external" href="http://docs.gunicorn.org/en/latest/design.html#how-many-workers">How Many Workers?</a>)</p>
+<p>The custom worker subclass is defined in
+<em>aiohttp.worker.GunicornWebWorker</em> and should be used instead of the
+<em>gaiohttp</em> worker provided by Gunicorn, which supports only
+aiohttp.wsgi applications:</p>
+<div class="highlight-python"><div class="highlight"><pre>&gt;&gt; gunicorn my_app_module:my_web_app --bind localhost:8080 --worker-class aiohttp.worker.GunicornWebWorker
+[2015-03-11 18:27:21 +0000] [1249] [INFO] Starting gunicorn 19.3.0
+[2015-03-11 18:27:21 +0000] [1249] [INFO] Listening at: http://127.0.0.1:8080 (1249)
+[2015-03-11 18:27:21 +0000] [1249] [INFO] Using worker: aiohttp.worker.GunicornWebWorker
+[2015-03-11 18:27:21 +0000] [1253] [INFO] Booting worker with pid: 1253
+</pre></div>
+</div>
+<p>Gunicorn is now running and ready to serve requests to your app&#8217;s
+worker processes.</p>
+</div>
+<div class="section" id="more-information">
+<h2>More information<a class="headerlink" href="#more-information" title="Permalink to this headline">¶</a></h2>
+<p>The Gunicorn documentation recommends deploying Gunicorn behind a
+Nginx proxy server. See the <a class="reference external" href="http://docs.gunicorn.org/en/latest/deploy.html">official documentation</a> for more
+information about suggested nginx configuration.</p>
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/gunicorn";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Deployment using Gunicorn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#prepare-environment">Prepare environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#application">Application</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#start-gunicorn">Start Gunicorn</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#more-information">More information</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/gunicorn.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,785 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.client &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/client.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/client",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/client";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.client</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;HTTP Client for asyncio.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">http.cookies</span>
+<span class="kn">import</span> <span class="nn">urllib.parse</span>
+
+<span class="kn">import</span> <span class="nn">aiohttp</span>
+<span class="kn">from</span> <span class="nn">.client_reqrep</span> <span class="kn">import</span> <span class="n">ClientRequest</span><span class="p">,</span> <span class="n">ClientResponse</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="kn">import</span> <span class="n">WSServerHandshakeError</span>
+<span class="kn">from</span> <span class="nn">.multidict</span> <span class="kn">import</span> <span class="n">MultiDictProxy</span><span class="p">,</span> <span class="n">MultiDict</span><span class="p">,</span> <span class="n">CIMultiDict</span><span class="p">,</span> <span class="n">upstr</span>
+<span class="kn">from</span> <span class="nn">.websocket</span> <span class="kn">import</span> <span class="n">WS_KEY</span><span class="p">,</span> <span class="n">WebSocketParser</span><span class="p">,</span> <span class="n">WebSocketWriter</span>
+<span class="kn">from</span> <span class="nn">.websocket_client</span> <span class="kn">import</span> <span class="n">ClientWebSocketResponse</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">hdrs</span>
+
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;ClientSession&#39;</span><span class="p">,</span> <span class="s">&#39;request&#39;</span><span class="p">,</span> <span class="s">&#39;get&#39;</span><span class="p">,</span> <span class="s">&#39;options&#39;</span><span class="p">,</span> <span class="s">&#39;head&#39;</span><span class="p">,</span>
+           <span class="s">&#39;delete&#39;</span><span class="p">,</span> <span class="s">&#39;post&#39;</span><span class="p">,</span> <span class="s">&#39;put&#39;</span><span class="p">,</span> <span class="s">&#39;patch&#39;</span><span class="p">)</span>
+
+<span class="n">PY_35</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="ClientSession"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession">[docs]</a><span class="k">class</span> <span class="nc">ClientSession</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;First-class interface for making HTTP requests.&quot;&quot;&quot;</span>
+
+    <span class="n">_source_traceback</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_connector</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">connector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">cookies</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">skip_auto_headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">auth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">request_class</span><span class="o">=</span><span class="n">ClientRequest</span><span class="p">,</span>
+                 <span class="n">response_class</span><span class="o">=</span><span class="n">ClientResponse</span><span class="p">,</span>
+                 <span class="n">ws_response_class</span><span class="o">=</span><span class="n">ClientWebSocketResponse</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="n">connector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">connector</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">TCPConnector</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">)</span>
+            <span class="n">loop</span> <span class="o">=</span> <span class="n">connector</span><span class="o">.</span><span class="n">_loop</span>  <span class="c"># never None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">loop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">loop</span> <span class="o">=</span> <span class="n">connector</span><span class="o">.</span><span class="n">_loop</span>  <span class="c"># never None</span>
+            <span class="k">elif</span> <span class="n">connector</span><span class="o">.</span><span class="n">_loop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">loop</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;loop argument must agree with connector&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span>
+        <span class="k">if</span> <span class="n">loop</span><span class="o">.</span><span class="n">get_debug</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">extract_stack</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cookies</span> <span class="o">=</span> <span class="n">http</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">SimpleCookie</span><span class="p">()</span>
+
+        <span class="c"># For Backward compatability with `share_cookies` connectors</span>
+        <span class="k">if</span> <span class="n">connector</span><span class="o">.</span><span class="n">_share_cookies</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_cookies</span><span class="p">(</span><span class="n">connector</span><span class="o">.</span><span class="n">cookies</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cookies</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_cookies</span><span class="p">(</span><span class="n">cookies</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="n">connector</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_auth</span> <span class="o">=</span> <span class="n">auth</span>
+
+        <span class="c"># Convert to list of tuples</span>
+        <span class="k">if</span> <span class="n">headers</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default_headers</span> <span class="o">=</span> <span class="n">headers</span>
+        <span class="k">if</span> <span class="n">skip_auto_headers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skip_auto_headers</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="n">upstr</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                                                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">skip_auto_headers</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_skip_auto_headers</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_class</span> <span class="o">=</span> <span class="n">request_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_response_class</span> <span class="o">=</span> <span class="n">response_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ws_response_class</span> <span class="o">=</span> <span class="n">ws_response_class</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_warnings</span><span class="o">=</span><span class="n">warnings</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+            <span class="n">_warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;Unclosed client session {!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                           <span class="n">ResourceWarning</span><span class="p">)</span>
+            <span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;client_session&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span>
+                       <span class="s">&#39;message&#39;</span><span class="p">:</span> <span class="s">&#39;Unclosed client session&#39;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">context</span><span class="p">[</span><span class="s">&#39;source_traceback&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_source_traceback</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_exception_handler</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ClientSession.request"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.request">[docs]</a>    <span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">skip_auto_headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">auth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                <span class="n">max_redirects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="s">&#39;utf-8&#39;</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpVersion11</span><span class="p">,</span>
+                <span class="n">compress</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">chunked</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                <span class="n">expect100</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                <span class="n">read_until_eof</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span>
+                <span class="n">method</span><span class="p">,</span>
+                <span class="n">url</span><span class="p">,</span>
+                <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                <span class="n">skip_auto_headers</span><span class="o">=</span><span class="n">skip_auto_headers</span><span class="p">,</span>
+                <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">,</span>
+                <span class="n">allow_redirects</span><span class="o">=</span><span class="n">allow_redirects</span><span class="p">,</span>
+                <span class="n">max_redirects</span><span class="o">=</span><span class="n">max_redirects</span><span class="p">,</span>
+                <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                <span class="n">compress</span><span class="o">=</span><span class="n">compress</span><span class="p">,</span>
+                <span class="n">chunked</span><span class="o">=</span><span class="n">chunked</span><span class="p">,</span>
+                <span class="n">expect100</span><span class="o">=</span><span class="n">expect100</span><span class="p">,</span>
+                <span class="n">read_until_eof</span><span class="o">=</span><span class="n">read_until_eof</span><span class="p">))</span>
+</div>
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">skip_auto_headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">auth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                 <span class="n">max_redirects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">encoding</span><span class="o">=</span><span class="s">&#39;utf-8&#39;</span><span class="p">,</span>
+                 <span class="n">version</span><span class="o">=</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpVersion11</span><span class="p">,</span>
+                 <span class="n">compress</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">chunked</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">expect100</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">read_until_eof</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Session is closed&#39;</span><span class="p">)</span>
+
+        <span class="n">redirects</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">upstr</span><span class="p">):</span>
+            <span class="n">method</span> <span class="o">=</span> <span class="n">upstr</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+
+        <span class="c"># Merge with default headers and transform to CIMultiDict</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_headers</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">auth</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">auth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_auth</span>
+        <span class="c"># It would be confusing if we support explicit Authorization header</span>
+        <span class="c"># with `auth` argument</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">headers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+                <span class="n">auth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span>
+                <span class="n">hdrs</span><span class="o">.</span><span class="n">AUTHORIZATION</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t combine `Authorization` header with &quot;</span>
+                             <span class="s">&quot;`auth` argument&quot;</span><span class="p">)</span>
+
+        <span class="n">skip_headers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_skip_auto_headers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">skip_auto_headers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">skip_auto_headers</span><span class="p">:</span>
+                <span class="n">skip_headers</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">upstr</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_class</span><span class="p">(</span>
+                <span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                <span class="n">skip_auto_headers</span><span class="o">=</span><span class="n">skip_headers</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">cookies</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span> <span class="n">compress</span><span class="o">=</span><span class="n">compress</span><span class="p">,</span> <span class="n">chunked</span><span class="o">=</span><span class="n">chunked</span><span class="p">,</span>
+                <span class="n">expect100</span><span class="o">=</span><span class="n">expect100</span><span class="p">,</span>
+                <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span> <span class="n">response_class</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_response_class</span><span class="p">)</span>
+
+            <span class="n">conn</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">req</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">resp</span> <span class="o">=</span> <span class="n">req</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">writer</span><span class="p">,</span> <span class="n">conn</span><span class="o">.</span><span class="n">reader</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_until_eof</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">resp</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">raise</span>
+            <span class="k">except</span> <span class="p">(</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpProcessingError</span><span class="p">,</span>
+                    <span class="n">aiohttp</span><span class="o">.</span><span class="n">ServerDisconnectedError</span><span class="p">)</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientResponseError</span><span class="p">()</span> <span class="kn">from</span> <span class="nn">exc</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientOSError</span><span class="p">(</span><span class="o">*</span><span class="n">exc</span><span class="o">.</span><span class="n">args</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_cookies</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">cookies</span><span class="p">)</span>
+            <span class="c"># For Backward compatability with `share_cookie` connectors</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">_share_cookies</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">update_cookies</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">cookies</span><span class="p">)</span>
+
+            <span class="c"># redirects</span>
+            <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">301</span><span class="p">,</span> <span class="mi">302</span><span class="p">,</span> <span class="mi">303</span><span class="p">,</span> <span class="mi">307</span><span class="p">)</span> <span class="ow">and</span> <span class="n">allow_redirects</span><span class="p">:</span>
+                <span class="n">redirects</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">max_redirects</span> <span class="ow">and</span> <span class="n">redirects</span> <span class="o">&gt;=</span> <span class="n">max_redirects</span><span class="p">:</span>
+                    <span class="n">resp</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+                <span class="c"># For 301 and 302, mimic IE behaviour, now changed in RFC.</span>
+                <span class="c"># Details: https://github.com/kennethreitz/requests/pull/269</span>
+                <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">307</span><span class="p">:</span>
+                    <span class="n">method</span> <span class="o">=</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span>
+                    <span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="k">if</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">):</span>
+                        <span class="n">headers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">)</span>
+
+                <span class="n">r_url</span> <span class="o">=</span> <span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">LOCATION</span><span class="p">)</span> <span class="ow">or</span>
+                         <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">URI</span><span class="p">))</span>
+
+                <span class="n">scheme</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urlsplit</span><span class="p">(</span><span class="n">r_url</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;http&#39;</span><span class="p">,</span> <span class="s">&#39;https&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">):</span>
+                    <span class="n">resp</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Can redirect only to http or https&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="ow">not</span> <span class="n">scheme</span><span class="p">:</span>
+                    <span class="n">r_url</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">parse</span><span class="o">.</span><span class="n">urljoin</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">r_url</span><span class="p">)</span>
+
+                <span class="n">url</span> <span class="o">=</span> <span class="n">r_url</span>
+                <span class="k">yield from</span> <span class="n">resp</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+                <span class="k">continue</span>
+
+            <span class="k">break</span>
+
+        <span class="k">return</span> <span class="n">resp</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+<div class="viewcode-block" id="ClientSession.ws_connect"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.ws_connect">[docs]</a>    <span class="k">def</span> <span class="nf">ws_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                   <span class="n">protocols</span><span class="o">=</span><span class="p">(),</span>
+                   <span class="n">timeout</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span>
+                   <span class="n">autoclose</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                   <span class="n">autoping</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                   <span class="n">auth</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initiate websocket connection.&quot;&quot;&quot;</span>
+
+        <span class="n">sec_key</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">urandom</span><span class="p">(</span><span class="mi">16</span><span class="p">))</span>
+
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">:</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">WEBSOCKET</span><span class="p">,</span>
+            <span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">:</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">,</span>
+            <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_VERSION</span><span class="p">:</span> <span class="s">&#39;13&#39;</span><span class="p">,</span>
+            <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_KEY</span><span class="p">:</span> <span class="n">sec_key</span><span class="o">.</span><span class="n">decode</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">protocols</span><span class="p">:</span>
+            <span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">protocols</span><span class="p">)</span>
+
+        <span class="c"># send request</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="s">&#39;get&#39;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                                       <span class="n">read_until_eof</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                                       <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">)</span>
+
+        <span class="c"># check handshake</span>
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">101</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WSServerHandshakeError</span><span class="p">(</span><span class="s">&#39;Invalid response status&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&#39;websocket&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WSServerHandshakeError</span><span class="p">(</span><span class="s">&#39;Invalid upgrade header&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s">&#39;upgrade&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WSServerHandshakeError</span><span class="p">(</span><span class="s">&#39;Invalid connection header&#39;</span><span class="p">)</span>
+
+        <span class="c"># key calculation</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_ACCEPT</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span>
+            <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">sec_key</span> <span class="o">+</span> <span class="n">WS_KEY</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">WSServerHandshakeError</span><span class="p">(</span><span class="s">&#39;Invalid challenge response&#39;</span><span class="p">)</span>
+
+        <span class="c"># websocket protocol</span>
+        <span class="n">protocol</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="n">protocols</span> <span class="ow">and</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span> <span class="ow">in</span> <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="p">:</span>
+            <span class="n">resp_protocols</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">proto</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span>
+                <span class="n">resp</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)]</span>
+
+            <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">resp_protocols</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">protocols</span><span class="p">:</span>
+                    <span class="n">protocol</span> <span class="o">=</span> <span class="n">proto</span>
+                    <span class="k">break</span>
+
+        <span class="n">reader</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">set_parser</span><span class="p">(</span><span class="n">WebSocketParser</span><span class="p">)</span>
+        <span class="n">writer</span> <span class="o">=</span> <span class="n">WebSocketWriter</span><span class="p">(</span><span class="n">resp</span><span class="o">.</span><span class="n">connection</span><span class="o">.</span><span class="n">writer</span><span class="p">,</span> <span class="n">use_mask</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ws_response_class</span><span class="p">(</span><span class="n">reader</span><span class="p">,</span>
+                                       <span class="n">writer</span><span class="p">,</span>
+                                       <span class="n">protocol</span><span class="p">,</span>
+                                       <span class="n">resp</span><span class="p">,</span>
+                                       <span class="n">timeout</span><span class="p">,</span>
+                                       <span class="n">autoclose</span><span class="p">,</span>
+                                       <span class="n">autoping</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_update_cookies</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cookies</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Update shared cookies.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cookies</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">cookies</span> <span class="o">=</span> <span class="n">cookies</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">cookies</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">http</span><span class="o">.</span><span class="n">cookies</span><span class="o">.</span><span class="n">Morsel</span><span class="p">):</span>
+                <span class="c"># use dict method because SimpleCookie class modifies value</span>
+                <span class="c"># before Python 3.4</span>
+                <span class="nb">dict</span><span class="o">.</span><span class="n">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cookies</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_prepare_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">headers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Add default headers and transform it to CIMultiDict</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Convert headers to MultiDict</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_headers</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">headers</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">headers</span><span class="p">,</span> <span class="p">(</span><span class="n">MultiDictProxy</span><span class="p">,</span> <span class="n">MultiDict</span><span class="p">)):</span>
+                <span class="n">headers</span> <span class="o">=</span> <span class="n">CIMultiDict</span><span class="p">(</span><span class="n">headers</span><span class="p">)</span>
+            <span class="n">added_names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">headers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">added_names</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="n">added_names</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+
+<div class="viewcode-block" id="ClientSession.get"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP GET request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">allow_redirects</span><span class="o">=</span><span class="n">allow_redirects</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.options"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.options">[docs]</a>    <span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP OPTIONS request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_OPTIONS</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">allow_redirects</span><span class="o">=</span><span class="n">allow_redirects</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.head"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.head">[docs]</a>    <span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP HEAD request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_HEAD</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">allow_redirects</span><span class="o">=</span><span class="n">allow_redirects</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.post"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.post">[docs]</a>    <span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP POST request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_POST</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.put"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.put">[docs]</a>    <span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP PUT request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PUT</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.patch"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.patch">[docs]</a>    <span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP PATCH request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PATCH</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.delete"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.delete">[docs]</a>    <span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Perform HTTP DELETE request.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">_RequestContextManager</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_DELETE</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                          <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="ClientSession.close"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close underlying connector.</span>
+
+<span class="sd">        Release all acquired resources.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">closed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Is client session closed.</span>
+
+<span class="sd">        A readonly property.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span><span class="o">.</span><span class="n">closed</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">connector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Connector instance used for the session.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">cookies</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The session cookies.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cookies</span>
+
+<div class="viewcode-block" id="ClientSession.detach"><a class="viewcode-back" href="../../client_reference.html#aiohttp.ClientSession.detach">[docs]</a>    <span class="k">def</span> <span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Detach connector from session without closing the former.</span>
+
+<span class="sd">        Session is switched to closed state anyway.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connector</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+    <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span>
+
+    <span class="k">def</span> <span class="nf">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<span class="k">if</span> <span class="n">PY_35</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Coroutine</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="n">Coroutine</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="nb">object</span>
+
+
+<span class="k">class</span> <span class="nc">_RequestContextManager</span><span class="p">(</span><span class="n">base</span><span class="p">):</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;_coro&#39;</span><span class="p">,</span> <span class="s">&#39;_resp&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coro</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span> <span class="o">=</span> <span class="n">coro</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resp</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">throw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typ</span><span class="p">,</span> <span class="n">val</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tb</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">typ</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tb</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">typ</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span><span class="o">.</span><span class="n">throw</span><span class="p">(</span><span class="n">typ</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">tb</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nd">@asyncio.coroutine</span>
+    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">resp</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span>
+        <span class="k">return</span> <span class="n">resp</span>
+
+    <span class="k">if</span> <span class="n">PY_35</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">resp</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span>
+            <span class="k">return</span> <span class="n">resp</span>
+
+        <span class="nd">@asyncio.coroutine</span>
+        <span class="k">def</span> <span class="nf">__aenter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_resp</span> <span class="o">=</span> <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coro</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resp</span>
+
+        <span class="nd">@asyncio.coroutine</span>
+        <span class="k">def</span> <span class="nf">__aexit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">tb</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">exc_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_resp</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">_resp</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+
+
+<span class="k">if</span> <span class="ow">not</span> <span class="n">PY_35</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">coroutines</span>
+        <span class="n">coroutines</span><span class="o">.</span><span class="n">_COROUTINE_TYPES</span> <span class="o">+=</span> <span class="p">(</span><span class="n">_RequestContextManager</span><span class="p">,)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">_DetachedRequestContextManager</span><span class="p">(</span><span class="n">_RequestContextManager</span><span class="p">):</span>
+
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="n">_RequestContextManager</span><span class="o">.</span><span class="n">__slots__</span> <span class="o">+</span> <span class="p">(</span><span class="s">&#39;_session&#39;</span><span class="p">,</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coro</span><span class="p">,</span> <span class="n">session</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">coro</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span> <span class="o">=</span> <span class="n">session</span>
+
+    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_session</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="request"><a class="viewcode-back" href="../../client_reference.html#aiohttp.request">[docs]</a><span class="k">def</span> <span class="nf">request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+            <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">skip_auto_headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">cookies</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">auth</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">allow_redirects</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">max_redirects</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+            <span class="n">encoding</span><span class="o">=</span><span class="s">&#39;utf-8&#39;</span><span class="p">,</span>
+            <span class="n">version</span><span class="o">=</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpVersion11</span><span class="p">,</span>
+            <span class="n">compress</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">chunked</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">expect100</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+            <span class="n">connector</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">read_until_eof</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+            <span class="n">request_class</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">response_class</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Constructs and sends a request. Returns response object.</span>
+
+<span class="sd">    :param str method: http method</span>
+<span class="sd">    :param str url: request url</span>
+<span class="sd">    :param params: (optional) Dictionary or bytes to be sent in the query</span>
+<span class="sd">      string of the new request</span>
+<span class="sd">    :param data: (optional) Dictionary, bytes, or file-like object to</span>
+<span class="sd">      send in the body of the request</span>
+<span class="sd">    :param dict headers: (optional) Dictionary of HTTP Headers to send with</span>
+<span class="sd">      the request</span>
+<span class="sd">    :param dict cookies: (optional) Dict object to send with the request</span>
+<span class="sd">    :param auth: (optional) BasicAuth named tuple represent HTTP Basic Auth</span>
+<span class="sd">    :type auth: aiohttp.helpers.BasicAuth</span>
+<span class="sd">    :param bool allow_redirects: (optional) If set to False, do not follow</span>
+<span class="sd">      redirects</span>
+<span class="sd">    :param version: Request http version.</span>
+<span class="sd">    :type version: aiohttp.protocol.HttpVersion</span>
+<span class="sd">    :param bool compress: Set to True if request has to be compressed</span>
+<span class="sd">       with deflate encoding.</span>
+<span class="sd">    :param chunked: Set to chunk size for chunked transfer encoding.</span>
+<span class="sd">    :type chunked: bool or int</span>
+<span class="sd">    :param bool expect100: Expect 100-continue response from server.</span>
+<span class="sd">    :param connector: BaseConnector sub-class instance to support</span>
+<span class="sd">       connection pooling.</span>
+<span class="sd">    :type connector: aiohttp.connector.BaseConnector</span>
+<span class="sd">    :param bool read_until_eof: Read response until eof if response</span>
+<span class="sd">       does not have Content-Length header.</span>
+<span class="sd">    :param request_class: (optional) Custom Request class implementation.</span>
+<span class="sd">    :param response_class: (optional) Custom Response class implementation.</span>
+<span class="sd">    :param loop: Optional event loop.</span>
+
+<span class="sd">    Usage::</span>
+
+<span class="sd">      &gt;&gt;&gt; import aiohttp</span>
+<span class="sd">      &gt;&gt;&gt; resp = yield from aiohttp.request(&#39;GET&#39;, &#39;http://python.org/&#39;)</span>
+<span class="sd">      &gt;&gt;&gt; resp</span>
+<span class="sd">      &lt;ClientResponse(python.org/) [200]&gt;</span>
+<span class="sd">      &gt;&gt;&gt; data = yield from resp.read()</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">connector</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">connector</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">TCPConnector</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span> <span class="n">force_close</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">if</span> <span class="n">request_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;request_class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">request_class</span>
+
+    <span class="k">if</span> <span class="n">response_class</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;response_class&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">response_class</span>
+
+    <span class="n">session</span> <span class="o">=</span> <span class="n">ClientSession</span><span class="p">(</span><span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span>
+                            <span class="n">cookies</span><span class="o">=</span><span class="n">cookies</span><span class="p">,</span>
+                            <span class="n">connector</span><span class="o">=</span><span class="n">connector</span><span class="p">,</span>
+                            <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_DetachedRequestContextManager</span><span class="p">(</span>
+        <span class="n">session</span><span class="o">.</span><span class="n">_request</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+                         <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span>
+                         <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+                         <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span>
+                         <span class="n">skip_auto_headers</span><span class="o">=</span><span class="n">skip_auto_headers</span><span class="p">,</span>
+                         <span class="n">auth</span><span class="o">=</span><span class="n">auth</span><span class="p">,</span>
+                         <span class="n">allow_redirects</span><span class="o">=</span><span class="n">allow_redirects</span><span class="p">,</span>
+                         <span class="n">max_redirects</span><span class="o">=</span><span class="n">max_redirects</span><span class="p">,</span>
+                         <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span>
+                         <span class="n">version</span><span class="o">=</span><span class="n">version</span><span class="p">,</span>
+                         <span class="n">compress</span><span class="o">=</span><span class="n">compress</span><span class="p">,</span>
+                         <span class="n">chunked</span><span class="o">=</span><span class="n">chunked</span><span class="p">,</span>
+                         <span class="n">expect100</span><span class="o">=</span><span class="n">expect100</span><span class="p">,</span>
+                         <span class="n">read_until_eof</span><span class="o">=</span><span class="n">read_until_eof</span><span class="p">),</span>
+        <span class="n">session</span><span class="o">=</span><span class="n">session</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="get"><a class="viewcode-back" href="../../client_reference.html#aiohttp.get">[docs]</a><span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="options"><a class="viewcode-back" href="../../client_reference.html#aiohttp.options">[docs]</a><span class="k">def</span> <span class="nf">options</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_OPTIONS</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="head"><a class="viewcode-back" href="../../client_reference.html#aiohttp.head">[docs]</a><span class="k">def</span> <span class="nf">head</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_HEAD</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="post"><a class="viewcode-back" href="../../client_reference.html#aiohttp.post">[docs]</a><span class="k">def</span> <span class="nf">post</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_POST</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="put"><a class="viewcode-back" href="../../client_reference.html#aiohttp.put">[docs]</a><span class="k">def</span> <span class="nf">put</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PUT</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="patch"><a class="viewcode-back" href="../../client_reference.html#aiohttp.patch">[docs]</a><span class="k">def</span> <span class="nf">patch</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_PATCH</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="delete"><a class="viewcode-back" href="../../client_reference.html#aiohttp.delete">[docs]</a><span class="k">def</span> <span class="nf">delete</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">request</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">METH_DELETE</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

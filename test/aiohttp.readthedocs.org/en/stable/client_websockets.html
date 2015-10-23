@@ -1,0 +1,426 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>WebSockets Client &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="HTTP Server Usage" href="web.html" />
+    <link rel="prev" title="HTTP Client Reference" href="client_reference.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/client_websockets.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "client_websockets",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "client_websockets";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="websockets-client">
+<span id="aiohttp-client-websockets"></span><h1>WebSockets Client<a class="headerlink" href="#websockets-client" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-aiohttp"></span><div class="versionadded">
+<p><span class="versionmodified">New in version 0.15.</span></p>
+</div>
+<p><a class="reference internal" href="multidict.html#module-aiohttp" title="aiohttp"><code class="xref py py-mod docutils literal"><span class="pre">aiohttp</span></code></a> works with client websockets out-of-the-box.</p>
+<p>You have to use the <a class="reference internal" href="client_reference.html#aiohttp.ClientSession.ws_connect" title="aiohttp.ClientSession.ws_connect"><code class="xref py py-meth docutils literal"><span class="pre">aiohttp.ClientSession.ws_connect()</span></code></a> coroutine
+for client websocket connection. It accepts a <em>url</em> as a first
+parameter and returns <a class="reference internal" href="#aiohttp.ClientWebSocketResponse" title="aiohttp.ClientWebSocketResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientWebSocketResponse</span></code></a>, with that
+object you can communicate with websocket server using response&#8217;s
+methods:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">session</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientSession</span><span class="p">()</span>
+<span class="n">ws</span> <span class="o">=</span> <span class="n">await</span> <span class="n">session</span><span class="o">.</span><span class="n">ws_connect</span><span class="p">(</span>
+    <span class="s">&#39;http://webscoket-server.org/endpoint&#39;</span><span class="p">)</span>
+
+<span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+    <span class="n">msg</span> <span class="o">=</span> <span class="n">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">receive</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">tp</span> <span class="o">==</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MsgType</span><span class="o">.</span><span class="n">text</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">msg</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="s">&#39;close&#39;</span><span class="p">:</span>
+           <span class="n">await</span> <span class="n">ws</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+           <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+           <span class="n">ws</span><span class="o">.</span><span class="n">send_str</span><span class="p">(</span><span class="n">msg</span><span class="o">.</span><span class="n">data</span> <span class="o">+</span> <span class="s">&#39;/answer&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">msg</span><span class="o">.</span><span class="n">tp</span> <span class="o">==</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MsgType</span><span class="o">.</span><span class="n">closed</span><span class="p">:</span>
+        <span class="k">break</span>
+    <span class="k">elif</span> <span class="n">msg</span><span class="o">.</span><span class="n">tp</span> <span class="o">==</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MsgType</span><span class="o">.</span><span class="n">error</span><span class="p">:</span>
+        <span class="k">break</span>
+</pre></div>
+</div>
+<p>If you prefer to establish <em>websocket client connection</em> without
+explicit <a class="reference internal" href="client_reference.html#aiohttp.ClientSession" title="aiohttp.ClientSession"><code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code></a> instance please use
+<a class="reference internal" href="#aiohttp.ws_connect" title="aiohttp.ws_connect"><code class="xref py py-func docutils literal"><span class="pre">ws_connect()</span></code></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>ws = await aiohttp.ws_connect(
+    &#39;http://webscoket-server.org/endpoint&#39;)
+</pre></div>
+</div>
+<p>You <strong>must</strong> use the only websocket task for both reading (e.g <code class="docutils literal"><span class="pre">await</span>
+<span class="pre">ws.receive()</span></code>) and writing but may have multiple writer tasks which
+can only send data asynchronously (by <code class="docutils literal"><span class="pre">ws.send_str('data')</span></code> for example).</p>
+<div class="section" id="ws-connect">
+<h2>ws_connect<a class="headerlink" href="#ws-connect" title="Permalink to this headline">¶</a></h2>
+<p>To connect to a websocket server you have to use the
+<a class="reference internal" href="#aiohttp.ws_connect" title="aiohttp.ws_connect"><code class="xref py py-func docutils literal"><span class="pre">aiohttp.ws_connect()</span></code></a> or <a class="reference internal" href="client_reference.html#aiohttp.ClientSession.ws_connect" title="aiohttp.ClientSession.ws_connect"><code class="xref py py-meth docutils literal"><span class="pre">aiohttp.ClientSession.ws_connect()</span></code></a>
+coroutines, do not create an instance of class
+<a class="reference internal" href="#aiohttp.ClientWebSocketResponse" title="aiohttp.ClientWebSocketResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientWebSocketResponse</span></code></a> manually.</p>
+<dl class="function">
+<dt id="aiohttp.ws_connect">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">ws_connect</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>protocols=()</em>, <em>timeout=10.0</em>, <em>connector=None</em>, <em>auth=None</em>, <em>ws_response_class=ClientWebSocketResponse</em>, <em>autoclose=True</em>, <em>autoping=True</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/websocket_client.html#ws_connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ws_connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function creates a websocket connection, checks the response and
+returns a <a class="reference internal" href="#aiohttp.ClientWebSocketResponse" title="aiohttp.ClientWebSocketResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientWebSocketResponse</span></code></a> object. In case of failure
+it may raise a <a class="reference internal" href="api.html#aiohttp.errors.WSServerHandshakeError" title="aiohttp.errors.WSServerHandshakeError"><code class="xref py py-exc docutils literal"><span class="pre">WSServerHandshakeError</span></code></a> exception.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Websocket server url</li>
+<li><strong>protocols</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><em>tuple</em></a>) &#8211; Websocket protocols</li>
+<li><strong>timeout</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#float" title="(in Python v3.5)"><em>float</em></a>) &#8211; Timeout for websocket read. 10 seconds by default</li>
+<li><strong>connector</strong> (<em>obj</em>) &#8211; object <a class="reference internal" href="client_reference.html#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a></li>
+<li><strong>ws_response_class</strong> &#8211; <p>WebSocketResponse class implementation.
+<code class="docutils literal"><span class="pre">ClientWebSocketResponse</span></code> by default.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</li>
+<li><strong>autoclose</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Automatically close websocket connection
+on close message from server. If <cite>autoclose</cite> is
+False them close procedure has to be handled manually</li>
+<li><strong>autoping</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Automatically send <cite>pong</cite> on <cite>ping</cite> message from server</li>
+<li><strong>auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; BasicAuth named tuple that
+represents HTTP Basic Authorization
+(optional)</li>
+<li><strong>loop</strong> &#8211; <p><a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop" title="(in Python v3.5)"><span class="xref std std-ref">event loop</span></a> used
+for processing HTTP requests.</p>
+<p>If param is <code class="docutils literal"><span class="pre">None</span></code> <a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloops.html#asyncio.get_event_loop" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">asyncio.get_event_loop()</span></code></a>
+used for getting default event loop, but we strongly
+recommend to use explicit loops everywhere.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.18: </span>Add <em>auth</em> parameter.</p>
+</div>
+</dd></dl>
+
+</div>
+<div class="section" id="clientwebsocketresponse">
+<h2>ClientWebSocketResponse<a class="headerlink" href="#clientwebsocketresponse" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.ClientWebSocketResponse">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">ClientWebSocketResponse</code><a class="headerlink" href="#aiohttp.ClientWebSocketResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for handling client-side websockets.</p>
+<dl class="attribute">
+<dt id="aiohttp.ClientWebSocketResponse.closed">
+<code class="descname">closed</code><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only property, <code class="docutils literal"><span class="pre">True</span></code> if <a class="reference internal" href="#aiohttp.ClientWebSocketResponse.close" title="aiohttp.ClientWebSocketResponse.close"><code class="xref py py-meth docutils literal"><span class="pre">close()</span></code></a> has been called of
+<code class="xref py py-const docutils literal"><span class="pre">MSG_CLOSE</span></code> message has been received from peer.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientWebSocketResponse.protocol">
+<code class="descname">protocol</code><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.protocol" title="Permalink to this definition">¶</a></dt>
+<dd><p>Websocket <em>subprotocol</em> chosen after <code class="xref py py-meth docutils literal"><span class="pre">start()</span></code> call.</p>
+<p>May be <code class="docutils literal"><span class="pre">None</span></code> if server and client protocols are
+not overlapping.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.exception">
+<code class="descname">exception</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.exception" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns exception if any occurs or returns None.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.ping">
+<code class="descname">ping</code><span class="sig-paren">(</span><em>message=b''</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.ping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <code class="xref py py-const docutils literal"><span class="pre">MSG_PING</span></code> to peer.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>message</strong> &#8211; optional payload of <em>ping</em> message,
+<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> (converted to <em>UTF-8</em> encoded bytes)
+or <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytes</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.send_str">
+<code class="descname">send_str</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.send_str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>data</em> to peer as <code class="xref py py-const docutils literal"><span class="pre">MSG_TEXT</span></code> message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; data to send.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)">TypeError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">if data is not <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.send_bytes">
+<code class="descname">send_bytes</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.send_bytes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Send <em>data</em> to peer as <code class="xref py py-const docutils literal"><span class="pre">MSG_BINARY</span></code> message.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; data to send.</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Raises <a class="reference external" href="http://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.5)">TypeError</a>:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">if data is not <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytes</span></code></a>,
+<a class="reference external" href="http://docs.python.org/3/library/functions.html#bytearray" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytearray</span></code></a> or <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#memoryview" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">memoryview</span></code></a>.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.close">
+<em class="property">coroutine </em><code class="descname">close</code><span class="sig-paren">(</span><em>*</em>, <em>code=1000</em>, <em>message=b''</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference external" href="http://docs.python.org/3/library/asyncio-task.html#coroutine" title="(in Python v3.5)"><span class="xref std std-ref">coroutine</span></a> that initiates closing handshake by sending
+<code class="xref py py-const docutils literal"><span class="pre">MSG_CLOSE</span></code> message. It waits for
+close response from server. It add timeout to <cite>close()</cite> call just wrap
+call with <cite>asyncio.wait()</cite> or <cite>asyncio.wait_for()</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>code</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; closing code</li>
+<li><strong>message</strong> &#8211; optional payload of <em>pong</em> message,
+<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> (converted to <em>UTF-8</em> encoded bytes)
+or <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytes</span></code></a>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientWebSocketResponse.receive">
+<em class="property">coroutine </em><code class="descname">receive</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientWebSocketResponse.receive" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference external" href="http://docs.python.org/3/library/asyncio-task.html#coroutine" title="(in Python v3.5)"><span class="xref std std-ref">coroutine</span></a> that waits upcoming <em>data</em>
+message from peer and returns it.</p>
+<p>The coroutine implicitly handles
+<code class="xref py py-const docutils literal"><span class="pre">MSG_PING</span></code>,
+<code class="xref py py-const docutils literal"><span class="pre">MSG_PONG</span></code> and
+<code class="xref py py-const docutils literal"><span class="pre">MSG_CLOSE</span></code> without returning the
+message.</p>
+<p>It process <em>ping-pong game</em> and performs <em>closing handshake</em> internally.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="api.html#aiohttp.websocket.Message" title="aiohttp.websocket.Message"><code class="xref py py-class docutils literal"><span class="pre">Message</span></code></a>, <cite>tp</cite> is types of
+<cite>~aiohttp.MsgType</cite></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/client_websockets";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">WebSockets Client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#ws-connect">ws_connect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#clientwebsocketresponse">ClientWebSocketResponse</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/client_websockets.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

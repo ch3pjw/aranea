@@ -1,0 +1,524 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Working with Multipart &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="Helpers API" href="api.html" />
+    <link rel="prev" title="Multidicts" href="multidict.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/multipart.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "multipart",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "multipart";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <span class="target" id="module-aiohttp.multipart"></span><div class="section" id="working-with-multipart">
+<span id="aiohttp-multipart"></span><h1>Working with Multipart<a class="headerlink" href="#working-with-multipart" title="Permalink to this headline">¶</a></h1>
+<p><cite>aiohttp</cite> supports a full featured multipart reader and writer. Both
+are designed with steaming processing in mind to avoid unwanted
+footprint which may be significant if you&#8217;re dealing with large
+payloads, but this also means that most I/O operation are only
+possible to be executed a single time.</p>
+<div class="section" id="reading-multipart-responses">
+<h2>Reading Multipart Responses<a class="headerlink" href="#reading-multipart-responses" title="Permalink to this headline">¶</a></h2>
+<p>Assume you made a request, as usual, and want to process the response multipart
+data:</p>
+<div class="highlight-python"><div class="highlight"><pre>async with aiohttp.request(...) as resp:
+    pass
+</pre></div>
+</div>
+<p>First, you need to wrap the response with a
+<a class="reference internal" href="api.html#aiohttp.multipart.MultipartReader.from_response" title="aiohttp.multipart.MultipartReader.from_response"><code class="xref py py-meth docutils literal"><span class="pre">MultipartReader.from_response()</span></code></a>. This needs to keep the implementation of
+<a class="reference internal" href="api.html#aiohttp.multipart.MultipartReader" title="aiohttp.multipart.MultipartReader"><code class="xref py py-class docutils literal"><span class="pre">MultipartReader</span></code></a> separated from the response and the connection routines
+which makes it more portable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">reader</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartReader</span><span class="o">.</span><span class="n">from_response</span><span class="p">(</span><span class="n">resp</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Let&#8217;s assume with this response you&#8217;d received some JSON document and multiple
+files for it, but you don&#8217;t need all of them, just a specific one.</p>
+<p>So first you need to enter into a loop where the multipart body will
+be processed:</p>
+<div class="highlight-python"><div class="highlight"><pre>metadata = None
+filedata = None
+while True:
+    part = await reader.next()
+</pre></div>
+</div>
+<p>The returned type depends on what the next part is: if it&#8217;s a simple body part
+then you&#8217;ll get <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader" title="aiohttp.multipart.BodyPartReader"><code class="xref py py-class docutils literal"><span class="pre">BodyPartReader</span></code></a> instance here, otherwise, it will
+be another <a class="reference internal" href="api.html#aiohttp.multipart.MultipartReader" title="aiohttp.multipart.MultipartReader"><code class="xref py py-class docutils literal"><span class="pre">MultipartReader</span></code></a> instance for the nested multipart. Remember,
+that multipart format is recursive and supports multiple levels of nested body
+parts. When there are no more parts left to fetch, <code class="docutils literal"><span class="pre">None</span></code> value will be
+returned - that&#8217;s the signal to break the loop:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">part</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">break</span>
+</pre></div>
+</div>
+<p>Both <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader" title="aiohttp.multipart.BodyPartReader"><code class="xref py py-class docutils literal"><span class="pre">BodyPartReader</span></code></a> and <a class="reference internal" href="api.html#aiohttp.multipart.MultipartReader" title="aiohttp.multipart.MultipartReader"><code class="xref py py-class docutils literal"><span class="pre">MultipartReader</span></code></a> provides access to
+body part headers: this allows you to filter parts by their attributes:</p>
+<div class="highlight-python"><div class="highlight"><pre>if part.headers[aiohttp.hdrs.CONTENT-TYPE] == &#39;application/json&#39;:
+    metadata = await part.json()
+    continue
+</pre></div>
+</div>
+<p>Nor <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader" title="aiohttp.multipart.BodyPartReader"><code class="xref py py-class docutils literal"><span class="pre">BodyPartReader</span></code></a> or <a class="reference internal" href="api.html#aiohttp.multipart.MultipartReader" title="aiohttp.multipart.MultipartReader"><code class="xref py py-class docutils literal"><span class="pre">MultipartReader</span></code></a> instances doesn&#8217;t
+read the whole body part data without explicitly asking for.
+<a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader" title="aiohttp.multipart.BodyPartReader"><code class="xref py py-class docutils literal"><span class="pre">BodyPartReader</span></code></a> provides a set of helpers methods
+to fetch popular content types in friendly way:</p>
+<ul class="simple">
+<li><a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.text" title="aiohttp.multipart.BodyPartReader.text"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartReader.text()</span></code></a> for plain text data;</li>
+<li><a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.json" title="aiohttp.multipart.BodyPartReader.json"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartReader.json()</span></code></a> for JSON;</li>
+<li><a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.form" title="aiohttp.multipart.BodyPartReader.form"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartReader.form()</span></code></a> for <cite>application/www-urlform-encode</cite></li>
+</ul>
+<p>Each of these methods automatically recognizes if content is compressed by
+using <cite>gzip</cite> and <cite>deflate</cite> encoding (while it respects <cite>identity</cite> one), or if
+transfer encoding is base64 or <cite>quoted-printable</cite> - in each case the result
+will get automatically decoded. But in case you need to access to raw binary
+data as it is, there are <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.read" title="aiohttp.multipart.BodyPartReader.read"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartReader.read()</span></code></a> and
+<a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.read_chunk" title="aiohttp.multipart.BodyPartReader.read_chunk"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartReader.read_chunk()</span></code></a> coroutine methods as well to read raw binary
+data as it is all-in-single-shot or by chunks respectively.</p>
+<p>When you have to deal with multipart files, the <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartReader.filename" title="aiohttp.multipart.BodyPartReader.filename"><code class="xref py py-attr docutils literal"><span class="pre">BodyPartReader.filename</span></code></a>
+property comes to help. It&#8217;s a very smart helper which handles
+<cite>Content-Disposition</cite> handler right and extracts the right filename attribute
+from it:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">if</span> <span class="n">part</span><span class="o">.</span><span class="n">filename</span> <span class="o">!=</span> <span class="s">&#39;secret.txt&#39;</span><span class="p">:</span>
+    <span class="k">continue</span>
+</pre></div>
+</div>
+<p>If current body part doesn&#8217;t matches your expectation and you want to skip it
+- just continue a loop to start a next iteration of it. Here is where magic
+happens. Before fetching the next body part <code class="docutils literal"><span class="pre">await</span> <span class="pre">reader.next()</span></code> it
+ensures that the previous one was read completely. If it wasn&#8217;t, all its content
+sends to the void in term to fetch the next part. So you don&#8217;t have to care
+about cleanup routines while you&#8217;re within a loop.</p>
+<p>Once you&#8217;d found a part for the file you&#8217;d searched for, just read it. Let&#8217;s
+handle it as it is without applying any decoding magic:</p>
+<div class="highlight-python"><div class="highlight"><pre>filedata = await part.read(decode=False)
+</pre></div>
+</div>
+<p>Later you may decide to decode the data. It&#8217;s still simple and possible
+to do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">filedata</span> <span class="o">=</span> <span class="n">part</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">filedata</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once you are done with multipart processing, just break a loop:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">break</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sending-multipart-requests">
+<h2>Sending Multipart Requests<a class="headerlink" href="#sending-multipart-requests" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter" title="aiohttp.multipart.MultipartWriter"><code class="xref py py-class docutils literal"><span class="pre">MultipartWriter</span></code></a> provides an interface to build multipart payload from
+the Python data and serialize it into chunked binary stream. Since multipart
+format is recursive and supports deeply nesting, you can use <code class="docutils literal"><span class="pre">with</span></code> statement
+to design your multipart data closer to how it will be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartWriter</span><span class="p">(</span><span class="s">&#39;mixed&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">mpwriter</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="k">with</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartWriter</span><span class="p">(</span><span class="s">&#39;related&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">subwriter</span><span class="p">:</span>
+        <span class="o">...</span>
+    <span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subwriter</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartWriter</span><span class="p">(</span><span class="s">&#39;related&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">subwriter</span><span class="p">:</span>
+        <span class="o">...</span>
+        <span class="k">with</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartWriter</span><span class="p">(</span><span class="s">&#39;related&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">subsubwriter</span><span class="p">:</span>
+            <span class="o">...</span>
+        <span class="n">subwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subsubwriter</span><span class="p">)</span>
+    <span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subwriter</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">MultipartWriter</span><span class="p">(</span><span class="s">&#39;related&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">subwriter</span><span class="p">:</span>
+        <span class="o">...</span>
+    <span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subwriter</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.append" title="aiohttp.multipart.MultipartWriter.append"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.append()</span></code></a> is used to join new body parts into a
+single stream. It accepts various inputs and determines what default headers
+should be used for.</p>
+<p>For text data default <cite>Content-Type</cite> is <em class="mimetype">text/plain; charset=utf-8</em>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;hello&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For binary data <em class="mimetype">application/octet-stream</em> is used:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;aiohttp&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can always override these default by passing your own headers with
+the second argument:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mpwriter</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">b</span><span class="s">&#39;GIF89a...&#39;</span><span class="p">),</span>
+                <span class="p">{</span><span class="s">&#39;CONTENT-TYPE&#39;</span><span class="p">:</span> <span class="s">&#39;image/gif&#39;</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>For file objects <cite>Content-Type</cite> will be determined by using Python&#8217;s
+<a class="reference external" href="https://docs.python.org/3.4/library/mimetypes.html">mimetypes</a> module and additionally <cite>Content-Disposition</cite> header will include
+the file&#8217;s basename:</p>
+<div class="highlight-python"><div class="highlight"><pre>part = root.append(open(__file__, &#39;rb))
+</pre></div>
+</div>
+<p>If you want to send a file with a different name, just handle the
+<a class="reference internal" href="api.html#aiohttp.multipart.BodyPartWriter" title="aiohttp.multipart.BodyPartWriter"><code class="xref py py-class docutils literal"><span class="pre">BodyPartWriter</span></code></a> instance which <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.append" title="aiohttp.multipart.MultipartWriter.append"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.append()</span></code></a> will
+always return and set <cite>Content-Disposition</cite> explicitly by using
+the <a class="reference internal" href="api.html#aiohttp.multipart.BodyPartWriter.set_content_disposition" title="aiohttp.multipart.BodyPartWriter.set_content_disposition"><code class="xref py py-meth docutils literal"><span class="pre">BodyPartWriter.set_content_disposition()</span></code></a> helper:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">part</span><span class="o">.</span><span class="n">set_content_disposition</span><span class="p">(</span><span class="s">&#39;attachment&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s">&#39;secret.txt&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Additionally, you may want to set other headers here:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">part</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_ID</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;X-12345&#39;</span>
+</pre></div>
+</div>
+<p>If you&#8217;d set <cite>Content-Encoding</cite>, it will be automatically applied to the
+data on serialization (see below):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">part</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_ENCODING</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;gzip&#39;</span>
+</pre></div>
+</div>
+<p>There are also <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.append_json" title="aiohttp.multipart.MultipartWriter.append_json"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.append_json()</span></code></a> and
+<a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.append_form" title="aiohttp.multipart.MultipartWriter.append_form"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.append_form()</span></code></a> helpers which are useful to work with JSON
+and form urlencoded data, so you don&#8217;t have to encode it every time manually:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">mpwriter</span><span class="o">.</span><span class="n">append_json</span><span class="p">({</span><span class="s">&#39;test&#39;</span><span class="p">:</span> <span class="s">&#39;passed&#39;</span><span class="p">})</span>
+<span class="n">mpwriter</span><span class="o">.</span><span class="n">append_form</span><span class="p">([(</span><span class="s">&#39;key&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">)])</span>
+</pre></div>
+</div>
+<p>When it&#8217;s done, to make a request just pass a root <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter" title="aiohttp.multipart.MultipartWriter"><code class="xref py py-class docutils literal"><span class="pre">MultipartWriter</span></code></a>
+instance as <code class="xref py py-func docutils literal"><span class="pre">aiohttp.client.request()</span></code> <cite>data</cite> argument:</p>
+<div class="highlight-python"><div class="highlight"><pre>await aiohttp.post(&#39;http://example.com&#39;, data=mpwriter)
+</pre></div>
+</div>
+<p>Behind the scenes <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.serialize" title="aiohttp.multipart.MultipartWriter.serialize"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.serialize()</span></code></a> will yield chunks of every
+part and if body part has <cite>Content-Encoding</cite> or <cite>Content-Transfer-Encoding</cite>
+they will be applied on streaming content.</p>
+<p>Please note, that on <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter.serialize" title="aiohttp.multipart.MultipartWriter.serialize"><code class="xref py py-meth docutils literal"><span class="pre">MultipartWriter.serialize()</span></code></a> all the file objects
+will be read until the end and there is no way to repeat a request without
+rewinding their pointers to the start.</p>
+</div>
+<div class="section" id="hacking-multipart">
+<h2>Hacking Multipart<a class="headerlink" href="#hacking-multipart" title="Permalink to this headline">¶</a></h2>
+<p>The Internet is full of terror and sometimes you may find a server which
+implements multipart support in strange ways when an oblivious solution
+doesn&#8217;t work.</p>
+<p>For instance, is server used <a class="reference external" href="https://docs.python.org/3.4/library/cgi.html">cgi.FieldStorage</a> then you have to ensure that
+no body part contains a <cite>Content-Length</cite> header:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">mpwriter</span><span class="p">:</span>
+    <span class="n">part</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>On the other hand, some server may require to specify <cite>Content-Length</cite> for the
+whole multipart request. <cite>aiohttp</cite> doesn&#8217;t do that since it sends multipart
+using chunked transfer encoding by default. To overcome this issue, you have
+to serialize a <a class="reference internal" href="api.html#aiohttp.multipart.MultipartWriter" title="aiohttp.multipart.MultipartWriter"><code class="xref py py-class docutils literal"><span class="pre">MultipartWriter</span></code></a> by our own in the way to calculate its
+size:</p>
+<div class="highlight-python"><div class="highlight"><pre>body = b&#39;&#39;.join(mpwriter.serialize())
+await aiohttp.post(&#39;http://example.com&#39;,
+                   data=body, headers=mpwriter.headers)
+</pre></div>
+</div>
+<p>Sometimes the server response may not be well formed: it may or may not
+contains nested parts. For instance, we request a resource which returns
+JSON documents with the files attached to it. If the document has any
+attachments, they are returned as a nested multipart.
+If it has not it responds as plain body parts:</p>
+<div class="highlight-python"><div class="highlight"><pre>CONTENT-TYPE: multipart/mixed; boundary=--:
+
+--:
+CONTENT-TYPE: application/json
+
+{&quot;_id&quot;: &quot;foo&quot;}
+--:
+CONTENT-TYPE: multipart/related; boundary=----:
+
+----:
+CONTENT-TYPE: application/json
+
+{&quot;_id&quot;: &quot;bar&quot;}
+----:
+CONTENT-TYPE: text/plain
+CONTENT-DISPOSITION: attachment; filename=bar.txt
+
+bar! bar! bar!
+----:--
+--:
+CONTENT-TYPE: application/json
+
+{&quot;_id&quot;: &quot;boo&quot;}
+--:
+CONTENT-TYPE: multipart/related; boundary=----:
+
+----:
+CONTENT-TYPE: application/json
+
+{&quot;_id&quot;: &quot;baz&quot;}
+----:
+CONTENT-TYPE: text/plain
+CONTENT-DISPOSITION: attachment; filename=baz.txt
+
+baz! baz! baz!
+----:--
+--:--
+</pre></div>
+</div>
+<p>Reading such kind of data in single stream is possible, but is not clean at
+all:</p>
+<div class="highlight-python"><div class="highlight"><pre>result = []
+while True:
+    part = await reader.next()
+
+    if part is None:
+        break
+
+    if isinstance(part, aiohttp.MultipartReader):
+        # Fetching files
+        while True:
+            filepart = await part.next()
+            if filepart is None:
+                break
+            result[-1].append((await filepart.read()))
+
+    else:
+        # Fetching document
+        result.append([(await part.json())])
+</pre></div>
+</div>
+<p>Let&#8217;s hack a reader in the way to return pairs of document and reader of the
+related files on each iteration:</p>
+<div class="highlight-python"><div class="highlight"><pre>class PairsMultipartReader(aiohttp.MultipartReader):
+
+    # keep reference on the original reader
+    multipart_reader_cls = aiohttp.MultipartReader
+
+    async def next(self):
+        &quot;&quot;&quot;Emits a tuple of document object (:class:`dict`) and multipart
+        reader of the followed attachments (if any).
+
+        :rtype: tuple
+        &quot;&quot;&quot;
+        reader = await super().next()
+
+        if self._at_eof:
+            return None, None
+
+        if isinstance(reader, self.multipart_reader_cls):
+            part = await reader.next()
+            doc = await part.json()
+        else:
+            doc = await reader.json()
+
+        return doc, reader
+</pre></div>
+</div>
+<p>And this gives us a more cleaner solution:</p>
+<div class="highlight-python"><div class="highlight"><pre>reader = PairsMultipartReader.from_response(resp)
+result = []
+while True:
+    doc, files_reader = await reader.next()
+
+    if doc is None:
+        break
+
+    files = []
+    while True:
+        filepart = await files_reader.next()
+        if file.part is None:
+            break
+        files.append((await filepart.read()))
+
+    result.append((doc, files))
+</pre></div>
+</div>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last">Multipart API in <a class="reference internal" href="api.html#aiohttp-api"><span>Helpers API</span></a> section.</p>
+</div>
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/multipart";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Working with Multipart</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#reading-multipart-responses">Reading Multipart Responses</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sending-multipart-requests">Sending Multipart Requests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hacking-multipart">Hacking Multipart</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/multipart.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

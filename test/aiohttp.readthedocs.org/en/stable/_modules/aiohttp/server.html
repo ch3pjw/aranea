@@ -1,0 +1,586 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.server &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/server.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/server",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/server";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.server</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;simple http server.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">http.server</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">import</span> <span class="nn">socket</span>
+
+<span class="kn">from</span> <span class="nn">html</span> <span class="kn">import</span> <span class="n">escape</span> <span class="k">as</span> <span class="n">html_escape</span>
+
+<span class="kn">import</span> <span class="nn">aiohttp</span>
+<span class="kn">from</span> <span class="nn">aiohttp</span> <span class="kn">import</span> <span class="n">errors</span><span class="p">,</span> <span class="n">streams</span><span class="p">,</span> <span class="n">hdrs</span><span class="p">,</span> <span class="n">helpers</span>
+<span class="kn">from</span> <span class="nn">aiohttp.log</span> <span class="kn">import</span> <span class="n">server_logger</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;ServerHttpProtocol&#39;</span><span class="p">,)</span>
+
+
+<span class="n">RESPONSES</span> <span class="o">=</span> <span class="n">http</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">BaseHTTPRequestHandler</span><span class="o">.</span><span class="n">responses</span>
+<span class="n">DEFAULT_ERROR_MESSAGE</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">&lt;html&gt;</span>
+<span class="s">  &lt;head&gt;</span>
+<span class="s">    &lt;title&gt;{status} {reason}&lt;/title&gt;</span>
+<span class="s">  &lt;/head&gt;</span>
+<span class="s">  &lt;body&gt;</span>
+<span class="s">    &lt;h1&gt;{status} {reason}&lt;/h1&gt;</span>
+<span class="s">    {message}</span>
+<span class="s">  &lt;/body&gt;</span>
+<span class="s">&lt;/html&gt;&quot;&quot;&quot;</span>
+
+<span class="n">ACCESS_LOG_FORMAT</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s">&#39;</span><span class="si">%(h)s</span><span class="s"> </span><span class="si">%(l)s</span><span class="s"> </span><span class="si">%(u)s</span><span class="s"> </span><span class="si">%(t)s</span><span class="s"> &quot;</span><span class="si">%(r)s</span><span class="s">&quot; </span><span class="si">%(s)s</span><span class="s"> </span><span class="si">%(b)s</span><span class="s"> &quot;</span><span class="si">%(f)s</span><span class="s">&quot; &quot;</span><span class="si">%(a)s</span><span class="s">&quot;&#39;</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="s">&#39;SO_KEEPALIVE&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">tcp_keepalive</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="n">sock</span> <span class="o">=</span> <span class="n">transport</span><span class="o">.</span><span class="n">get_extra_info</span><span class="p">(</span><span class="s">&#39;socket&#39;</span><span class="p">)</span>
+        <span class="n">sock</span><span class="o">.</span><span class="n">setsockopt</span><span class="p">(</span><span class="n">socket</span><span class="o">.</span><span class="n">SOL_SOCKET</span><span class="p">,</span> <span class="n">socket</span><span class="o">.</span><span class="n">SO_KEEPALIVE</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">tcp_keepalive</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>  <span class="c"># pragma: no cover</span>
+        <span class="k">pass</span>
+
+<span class="n">EMPTY_PAYLOAD</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">EmptyStreamReader</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="ServerHttpProtocol"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol">[docs]</a><span class="k">class</span> <span class="nc">ServerHttpProtocol</span><span class="p">(</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">StreamProtocol</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Simple http protocol implementation.</span>
+
+<span class="sd">    ServerHttpProtocol handles incoming http request. It reads request line,</span>
+<span class="sd">    request headers and request payload and calls handle_request() method.</span>
+<span class="sd">    By default it always returns with 404 response.</span>
+
+<span class="sd">    ServerHttpProtocol handles errors in incoming request, like bad</span>
+<span class="sd">    status line, bad headers or incomplete payload. If any error occurs,</span>
+<span class="sd">    connection gets closed.</span>
+
+<span class="sd">    :param keep_alive: number of seconds before closing keep-alive connection</span>
+<span class="sd">    :type keep_alive: int or None</span>
+
+<span class="sd">    :param bool keep_alive_on: keep-alive is o, default is on</span>
+
+<span class="sd">    :param int timeout: slow request timeout</span>
+
+<span class="sd">    :param allowed_methods: (optional) List of allowed request methods.</span>
+<span class="sd">                            Set to empty list to allow all methods.</span>
+<span class="sd">    :type allowed_methods: tuple</span>
+
+<span class="sd">    :param bool debug: enable debug mode</span>
+
+<span class="sd">    :param logger: custom logger object</span>
+<span class="sd">    :type logger: aiohttp.log.server_logger</span>
+
+<span class="sd">    :param access_log: custom logging object</span>
+<span class="sd">    :type access_log: aiohttp.log.server_logger</span>
+
+<span class="sd">    :param str access_log_format: access log format string</span>
+
+<span class="sd">    :param loop: Optional event loop</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_request_count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_reading_request</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">_keep_alive</span> <span class="o">=</span> <span class="bp">False</span>  <span class="c"># keep transport open</span>
+    <span class="n">_keep_alive_handle</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># keep alive timer handle</span>
+    <span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># slow request timer handle</span>
+
+    <span class="n">_request_prefix</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpPrefixParser</span><span class="p">()</span>  <span class="c"># http method parser</span>
+    <span class="n">_request_parser</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpRequestParser</span><span class="p">()</span>  <span class="c"># default request parser</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">keep_alive</span><span class="o">=</span><span class="mi">75</span><span class="p">,</span>  <span class="c"># NGINX default value is 75 secs</span>
+                 <span class="n">keep_alive_on</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                 <span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">logger</span><span class="o">=</span><span class="n">server_logger</span><span class="p">,</span>
+                 <span class="n">access_log</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">access_log_format</span><span class="o">=</span><span class="n">ACCESS_LOG_FORMAT</span><span class="p">,</span>
+                 <span class="n">host</span><span class="o">=</span><span class="s">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">port</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">debug</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                 <span class="n">log</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
+            <span class="n">loop</span><span class="o">=</span><span class="n">loop</span><span class="p">,</span>
+            <span class="n">disconnect_error</span><span class="o">=</span><span class="n">errors</span><span class="o">.</span><span class="n">ClientDisconnectedError</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_on</span> <span class="o">=</span> <span class="n">keep_alive_on</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span> <span class="o">=</span> <span class="n">keep_alive</span>  <span class="c"># number of seconds to keep alive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="o">=</span> <span class="n">timeout</span>  <span class="c"># slow request timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">loop</span> <span class="k">if</span> <span class="n">loop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">get_event_loop</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">host</span> <span class="o">=</span> <span class="n">host</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">port</span> <span class="o">=</span> <span class="n">port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">log</span> <span class="ow">or</span> <span class="n">logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_log</span> <span class="o">=</span> <span class="n">access_log</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">access_log_format</span> <span class="o">=</span> <span class="n">access_log_format</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">keep_alive_timeout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span>
+
+<div class="viewcode-block" id="ServerHttpProtocol.closing"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.closing">[docs]</a>    <span class="k">def</span> <span class="nf">closing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mf">15.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Worker process is about to exit, we need cleanup everything and</span>
+<span class="sd">        stop accepting requests. It is especially important for keep-alive</span>
+<span class="sd">        connections.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_on</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reading_request</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">timeout</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+
+            <span class="c"># use slow request timeout for closing</span>
+            <span class="c"># connection_lost cleans timeout handler</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_later</span><span class="p">(</span>
+                <span class="n">timeout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancel_slow_request</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.connection_made"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.connection_made">[docs]</a>    <span class="k">def</span> <span class="nf">connection_made</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">connection_made</span><span class="p">(</span><span class="n">transport</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">async</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+
+        <span class="c"># start slow request timer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_later</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancel_slow_request</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_on</span><span class="p">:</span>
+            <span class="n">tcp_keepalive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transport</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.connection_lost"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.connection_lost">[docs]</a>    <span class="k">def</span> <span class="nf">connection_lost</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">connection_lost</span><span class="p">(</span><span class="n">exc</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.data_received"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.data_received">[docs]</a>    <span class="k">def</span> <span class="nf">data_received</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">data_received</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="c"># reading request</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reading_request</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reading_request</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># stop keep-alive timer</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.keep_alive"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.keep_alive">[docs]</a>    <span class="k">def</span> <span class="nf">keep_alive</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set keep-alive connection mode.</span>
+
+<span class="sd">        :param bool val: new state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive</span> <span class="o">=</span> <span class="n">val</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.log_access"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.log_access">[docs]</a>    <span class="k">def</span> <span class="nf">log_access</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_log</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_log_format</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">environ</span> <span class="o">=</span> <span class="n">environ</span> <span class="k">if</span> <span class="n">environ</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="k">else</span> <span class="p">{}</span>
+                <span class="n">atoms</span> <span class="o">=</span> <span class="n">helpers</span><span class="o">.</span><span class="n">SafeAtoms</span><span class="p">(</span>
+                    <span class="n">helpers</span><span class="o">.</span><span class="n">atoms</span><span class="p">(</span>
+                        <span class="n">message</span><span class="p">,</span> <span class="n">environ</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="p">,</span> <span class="n">time</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="s">&#39;headers&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span>
+                    <span class="nb">getattr</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="s">&#39;headers&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">access_log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_log_format</span> <span class="o">%</span> <span class="n">atoms</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.log_debug"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.log_debug">[docs]</a>    <span class="k">def</span> <span class="nf">log_debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.log_exception"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.log_exception">[docs]</a>    <span class="k">def</span> <span class="nf">log_exception</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.cancel_slow_request"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.cancel_slow_request">[docs]</a>    <span class="k">def</span> <span class="nf">cancel_slow_request</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&#39;Close slow request.&#39;</span><span class="p">)</span>
+</div>
+    <span class="nd">@asyncio.coroutine</span>
+<div class="viewcode-block" id="ServerHttpProtocol.start"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.start">[docs]</a>    <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Start processing of incoming requests.</span>
+
+<span class="sd">        It reads request line, request headers and request payload, then</span>
+<span class="sd">        calls handle_request() method. Subclass has to override</span>
+<span class="sd">        handle_request(). start() handles various exceptions in request</span>
+<span class="sd">        or response handling. Connection is being closed always unless</span>
+<span class="sd">        keep_alive(True) specified.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span>
+
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_request_count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reading_request</span> <span class="o">=</span> <span class="bp">False</span>
+
+            <span class="n">payload</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="c"># read http request method</span>
+                <span class="n">prefix</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">set_parser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_prefix</span><span class="p">)</span>
+                <span class="k">yield from</span> <span class="n">prefix</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+                <span class="c"># start reading request</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_reading_request</span> <span class="o">=</span> <span class="bp">True</span>
+
+                <span class="c"># start slow request timer</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_later</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_timeout</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancel_slow_request</span><span class="p">)</span>
+
+                <span class="c"># read request headers</span>
+                <span class="n">httpstream</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">set_parser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_request_parser</span><span class="p">)</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">httpstream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+
+                <span class="c"># cancel slow request timer</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_timeout_handle</span> <span class="o">=</span> <span class="bp">None</span>
+
+                <span class="c"># request may not have payload</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONTENT_LENGTH</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span>
+                    <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_KEY1</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">headers</span> <span class="ow">or</span>
+                    <span class="s">&#39;chunked&#39;</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+                        <span class="n">hdrs</span><span class="o">.</span><span class="n">TRANSFER_ENCODING</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)):</span>
+                    <span class="n">payload</span> <span class="o">=</span> <span class="n">streams</span><span class="o">.</span><span class="n">FlowControlStreamReader</span><span class="p">(</span>
+                        <span class="n">reader</span><span class="p">,</span> <span class="n">loop</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
+                    <span class="n">reader</span><span class="o">.</span><span class="n">set_parser</span><span class="p">(</span>
+                        <span class="n">aiohttp</span><span class="o">.</span><span class="n">HttpPayloadParser</span><span class="p">(</span><span class="n">message</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">payload</span> <span class="o">=</span> <span class="n">EMPTY_PAYLOAD</span>
+
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_request</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">payload</span><span class="p">)</span>
+
+            <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="n">errors</span><span class="o">.</span><span class="n">ClientDisconnectedError</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span>
+                    <span class="s">&#39;Ignored premature client disconnection #1.&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">except</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpProcessingError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="n">exc</span><span class="o">.</span><span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span>
+                                                 <span class="bp">None</span><span class="p">,</span> <span class="n">exc</span><span class="p">,</span> <span class="n">exc</span><span class="o">.</span><span class="n">headers</span><span class="p">,</span>
+                                                 <span class="n">exc</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">except</span> <span class="n">errors</span><span class="o">.</span><span class="n">LineLimitExceededParserError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                <span class="k">yield from</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_error</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">exc</span><span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span>
+                        <span class="s">&#39;Ignored premature client disconnection #2.&#39;</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+                <span class="k">if</span> <span class="n">payload</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">payload</span><span class="o">.</span><span class="n">is_eof</span><span class="p">():</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&#39;Uncompleted request.&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                    <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">reader</span><span class="o">.</span><span class="n">unset_parser</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span>
+                            <span class="s">&#39;Start keep-alive timer for </span><span class="si">%s</span><span class="s"> sec.&#39;</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_handle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">call_later</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_period</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_keep_alive_on</span><span class="p">:</span>
+                        <span class="c"># do nothing, rely on kernel or upstream server</span>
+                        <span class="k">pass</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log_debug</span><span class="p">(</span><span class="s">&#39;Close client connection.&#39;</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="o">=</span> <span class="bp">None</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">transport</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+                        <span class="k">return</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># connection is closed</span>
+                    <span class="k">return</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.handle_error"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.handle_error">[docs]</a>    <span class="k">def</span> <span class="nf">handle_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">payload</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">exc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle errors.</span>
+
+<span class="sd">        Returns http response with specific status code. Logs additional</span>
+<span class="sd">        information. It always closes current connection.&quot;&quot;&quot;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_request_handler</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># client has been disconnected during writing.</span>
+                <span class="k">return</span> <span class="p">()</span>
+
+            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="mi">500</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log_exception</span><span class="p">(</span><span class="s">&quot;Error handling request&quot;</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">reason</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">reason</span> <span class="o">==</span> <span class="s">&#39;&#39;</span><span class="p">:</span>
+                    <span class="n">reason</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="n">RESPONSES</span><span class="p">[</span><span class="n">status</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">msg</span> <span class="o">=</span> <span class="n">reason</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="mi">500</span>
+                <span class="n">reason</span><span class="p">,</span> <span class="n">msg</span> <span class="o">=</span> <span class="s">&#39;???&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="ow">and</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">tb</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+                    <span class="n">tb</span> <span class="o">=</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+                    <span class="n">msg</span> <span class="o">+=</span> <span class="s">&#39;&lt;br&gt;&lt;h2&gt;Traceback:&lt;/h2&gt;</span><span class="se">\n</span><span class="s">&lt;pre&gt;{}&lt;/pre&gt;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tb</span><span class="p">)</span>
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+            <span class="n">html</span> <span class="o">=</span> <span class="n">DEFAULT_ERROR_MESSAGE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">msg</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+
+            <span class="n">response</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">add_headers</span><span class="p">(</span>
+                <span class="p">(</span><span class="s">&#39;CONTENT-TYPE&#39;</span><span class="p">,</span> <span class="s">&#39;text/html; charset=utf-8&#39;</span><span class="p">),</span>
+                <span class="p">(</span><span class="s">&#39;CONTENT-LENGTH&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">html</span><span class="p">))))</span>
+            <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">add_headers</span><span class="p">(</span><span class="o">*</span><span class="n">headers</span><span class="p">)</span>
+            <span class="n">response</span><span class="o">.</span><span class="n">send_headers</span><span class="p">()</span>
+
+            <span class="n">response</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+            <span class="n">drain</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">write_eof</span><span class="p">()</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log_access</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">now</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">drain</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">keep_alive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ServerHttpProtocol.handle_request"><a class="viewcode-back" href="../../server.html#aiohttp.server.ServerHttpProtocol.handle_request">[docs]</a>    <span class="k">def</span> <span class="nf">handle_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">payload</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Handle a single http request.</span>
+
+<span class="sd">        Subclass should override this method. By default it always</span>
+<span class="sd">        returns 404 response.</span>
+
+<span class="sd">        :param message: Request headers</span>
+<span class="sd">        :type message: aiohttp.protocol.HttpRequestParser</span>
+<span class="sd">        :param payload: Request payload</span>
+<span class="sd">        :type payload: aiohttp.streams.FlowControlStreamReader</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="p">,</span> <span class="mi">404</span><span class="p">,</span> <span class="n">http_version</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">version</span><span class="p">,</span> <span class="n">close</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="n">body</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;Page Not Found!&#39;</span>
+
+        <span class="n">response</span><span class="o">.</span><span class="n">add_headers</span><span class="p">(</span>
+            <span class="p">(</span><span class="s">&#39;CONTENT-TYPE&#39;</span><span class="p">,</span> <span class="s">&#39;text/plain&#39;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s">&#39;CONTENT-LENGTH&#39;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">body</span><span class="p">))))</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">send_headers</span><span class="p">()</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+        <span class="n">drain</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">write_eof</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">keep_alive</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log_access</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">now</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">drain</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

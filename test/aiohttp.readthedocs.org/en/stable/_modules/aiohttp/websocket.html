@@ -1,0 +1,588 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>aiohttp.websocket &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="../../_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/websocket.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "_modules/aiohttp/websocket",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "_modules/aiohttp/websocket";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for aiohttp.websocket</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;WebSocket protocol versions 13 and 8.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">base64</span>
+<span class="kn">import</span> <span class="nn">binascii</span>
+<span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">from</span> <span class="nn">struct</span> <span class="kn">import</span> <span class="n">Struct</span>
+<span class="kn">from</span> <span class="nn">aiohttp</span> <span class="kn">import</span> <span class="n">errors</span><span class="p">,</span> <span class="n">hdrs</span>
+<span class="kn">from</span> <span class="nn">aiohttp.log</span> <span class="kn">import</span> <span class="n">ws_logger</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;WebSocketParser&#39;</span><span class="p">,</span> <span class="s">&#39;WebSocketWriter&#39;</span><span class="p">,</span> <span class="s">&#39;do_handshake&#39;</span><span class="p">,</span>
+           <span class="s">&#39;Message&#39;</span><span class="p">,</span> <span class="s">&#39;WebSocketError&#39;</span><span class="p">,</span>
+           <span class="s">&#39;MSG_TEXT&#39;</span><span class="p">,</span> <span class="s">&#39;MSG_BINARY&#39;</span><span class="p">,</span> <span class="s">&#39;MSG_CLOSE&#39;</span><span class="p">,</span> <span class="s">&#39;MSG_PING&#39;</span><span class="p">,</span> <span class="s">&#39;MSG_PONG&#39;</span><span class="p">)</span>
+
+<span class="c"># Frame opcodes defined in the spec.</span>
+<span class="n">OPCODE_CONTINUATION</span> <span class="o">=</span> <span class="mh">0x0</span>
+<span class="n">MSG_TEXT</span> <span class="o">=</span> <span class="n">OPCODE_TEXT</span> <span class="o">=</span> <span class="mh">0x1</span>
+<span class="n">MSG_BINARY</span> <span class="o">=</span> <span class="n">OPCODE_BINARY</span> <span class="o">=</span> <span class="mh">0x2</span>
+<span class="n">MSG_CLOSE</span> <span class="o">=</span> <span class="n">OPCODE_CLOSE</span> <span class="o">=</span> <span class="mh">0x8</span>
+<span class="n">MSG_PING</span> <span class="o">=</span> <span class="n">OPCODE_PING</span> <span class="o">=</span> <span class="mh">0x9</span>
+<span class="n">MSG_PONG</span> <span class="o">=</span> <span class="n">OPCODE_PONG</span> <span class="o">=</span> <span class="mh">0xa</span>
+
+<span class="n">CLOSE_OK</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">CLOSE_GOING_AWAY</span> <span class="o">=</span> <span class="mi">1001</span>
+<span class="n">CLOSE_PROTOCOL_ERROR</span> <span class="o">=</span> <span class="mi">1002</span>
+<span class="n">CLOSE_UNSUPPORTED_DATA</span> <span class="o">=</span> <span class="mi">1003</span>
+<span class="n">CLOSE_INVALID_TEXT</span> <span class="o">=</span> <span class="mi">1007</span>
+<span class="n">CLOSE_POLICY_VIOLATION</span> <span class="o">=</span> <span class="mi">1008</span>
+<span class="n">CLOSE_MESSAGE_TOO_BIG</span> <span class="o">=</span> <span class="mi">1009</span>
+<span class="n">CLOSE_MANDATORY_EXTENSION</span> <span class="o">=</span> <span class="mi">1010</span>
+<span class="n">CLOSE_INTERNAL_ERROR</span> <span class="o">=</span> <span class="mi">1011</span>
+
+<span class="n">ALLOWED_CLOSE_CODES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">CLOSE_OK</span><span class="p">,</span>
+    <span class="n">CLOSE_GOING_AWAY</span><span class="p">,</span>
+    <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+    <span class="n">CLOSE_UNSUPPORTED_DATA</span><span class="p">,</span>
+    <span class="n">CLOSE_INVALID_TEXT</span><span class="p">,</span>
+    <span class="n">CLOSE_POLICY_VIOLATION</span><span class="p">,</span>
+    <span class="n">CLOSE_MESSAGE_TOO_BIG</span><span class="p">,</span>
+    <span class="n">CLOSE_MANDATORY_EXTENSION</span><span class="p">,</span>
+    <span class="n">CLOSE_INTERNAL_ERROR</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">WS_KEY</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;258EAFA5-E914-47DA-95CA-C5AB0DC85B11&#39;</span>
+<span class="n">WS_HDRS</span> <span class="o">=</span> <span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">,</span>
+           <span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">,</span>
+           <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_VERSION</span><span class="p">,</span>
+           <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_KEY</span><span class="p">,</span>
+           <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span><span class="p">)</span>
+
+<span class="n">Message</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Message&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;tp&#39;</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="s">&#39;extra&#39;</span><span class="p">])</span>
+
+<span class="n">UNPACK_LEN2</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!H&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unpack_from</span>
+<span class="n">UNPACK_LEN3</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!Q&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unpack_from</span>
+<span class="n">UNPACK_CLOSE_CODE</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!H&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">unpack</span>
+<span class="n">PACK_LEN1</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!BB&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span>
+<span class="n">PACK_LEN2</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!BBH&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span>
+<span class="n">PACK_LEN3</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!BBQ&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span>
+<span class="n">PACK_CLOSE_CODE</span> <span class="o">=</span> <span class="n">Struct</span><span class="p">(</span><span class="s">&#39;!H&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span>
+<span class="n">MSG_SIZE</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">14</span>
+
+
+<div class="viewcode-block" id="WebSocketError"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketError">[docs]</a><span class="k">class</span> <span class="nc">WebSocketError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;WebSocket protocol parser error.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">code</span> <span class="o">=</span> <span class="n">code</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="WebSocketParser"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketParser">[docs]</a><span class="k">def</span> <span class="nf">WebSocketParser</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">buf</span><span class="p">):</span>
+    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+        <span class="n">fin</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">parse_frame</span><span class="p">(</span><span class="n">buf</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OPCODE_CLOSE</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">close_code</span> <span class="o">=</span> <span class="n">UNPACK_CLOSE_CODE</span><span class="p">(</span><span class="n">payload</span><span class="p">[:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">close_code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_CLOSE_CODES</span> <span class="ow">and</span> <span class="n">close_code</span> <span class="o">&lt;</span> <span class="mi">3000</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                        <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+                        <span class="s">&#39;Invalid close code: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">close_code</span><span class="p">))</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">close_message</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">UnicodeDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                        <span class="n">CLOSE_INVALID_TEXT</span><span class="p">,</span>
+                        <span class="s">&#39;Invalid UTF-8 text message&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_CLOSE</span><span class="p">,</span> <span class="n">close_code</span><span class="p">,</span> <span class="n">close_message</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">payload</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                    <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+                    <span class="s">&#39;Invalid close frame: {} {} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">fin</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_CLOSE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+
+            <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OPCODE_PING</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_PING</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OPCODE_PONG</span><span class="p">:</span>
+            <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_PONG</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+
+        <span class="k">elif</span> <span class="n">opcode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">OPCODE_TEXT</span><span class="p">,</span> <span class="n">OPCODE_BINARY</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span> <span class="s">&quot;Unexpected opcode={!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opcode</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># load text/binary</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">payload</span><span class="p">]</span>
+
+            <span class="k">while</span> <span class="ow">not</span> <span class="n">fin</span><span class="p">:</span>
+                <span class="n">fin</span><span class="p">,</span> <span class="n">_opcode</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">parse_frame</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+                <span class="c"># We can receive ping/close in the middle of</span>
+                <span class="c"># text message, Case 5.*</span>
+                <span class="k">if</span> <span class="n">_opcode</span> <span class="o">==</span> <span class="n">OPCODE_PING</span><span class="p">:</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span>
+                        <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_PING</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">))</span>
+                    <span class="n">fin</span><span class="p">,</span> <span class="n">_opcode</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">parse_frame</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">_opcode</span> <span class="o">==</span> <span class="n">OPCODE_CLOSE</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">close_code</span> <span class="o">=</span> <span class="n">UNPACK_CLOSE_CODE</span><span class="p">(</span><span class="n">payload</span><span class="p">[:</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="n">close_code</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_CLOSE_CODES</span> <span class="ow">and</span>
+                                <span class="n">close_code</span> <span class="o">&lt;</span> <span class="mi">3000</span><span class="p">):</span>
+                            <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                                <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+                                <span class="s">&#39;Invalid close code: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">close_code</span><span class="p">))</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">close_message</span> <span class="o">=</span> <span class="n">payload</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+                        <span class="k">except</span> <span class="ne">UnicodeDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                                <span class="n">CLOSE_INVALID_TEXT</span><span class="p">,</span>
+                                <span class="s">&#39;Invalid UTF-8 text message&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+                        <span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_CLOSE</span><span class="p">,</span> <span class="n">close_code</span><span class="p">,</span> <span class="n">close_message</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="n">payload</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                            <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+                            <span class="s">&#39;Invalid close frame: {} {} {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                                <span class="n">fin</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">payload</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">msg</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_CLOSE</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+
+                    <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                    <span class="n">fin</span><span class="p">,</span> <span class="n">_opcode</span><span class="p">,</span> <span class="n">payload</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">parse_frame</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">_opcode</span> <span class="o">!=</span> <span class="n">OPCODE_CONTINUATION</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                        <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+                        <span class="s">&#39;The opcode in non-fin frame is expected &#39;</span>
+                        <span class="s">&#39;to be zero, got {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">_opcode</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OPCODE_TEXT</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+                    <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span>
+                        <span class="n">Message</span><span class="p">(</span>
+                            <span class="n">OPCODE_TEXT</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">UnicodeDecodeError</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+                        <span class="n">CLOSE_INVALID_TEXT</span><span class="p">,</span>
+                        <span class="s">&#39;Invalid UTF-8 text message&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">feed_data</span><span class="p">(</span>
+                    <span class="n">Message</span><span class="p">(</span><span class="n">OPCODE_BINARY</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_websocket_mask_python</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Websocket masking function.</span>
+
+<span class="sd">    `mask` is a `bytes` object of length 4; `data` is a `bytes` object</span>
+<span class="sd">    of any length.  Returns a `bytes` object of the same length as</span>
+<span class="sd">    `data` with the mask applied as specified in section 5.3 of RFC</span>
+<span class="sd">    6455.</span>
+
+<span class="sd">    This pure-python implementation may be replaced by an optimized</span>
+<span class="sd">    version when available.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">bytes</span><span class="p">(</span><span class="n">b</span> <span class="o">^</span> <span class="n">mask</span><span class="p">[</span><span class="n">i</span> <span class="o">%</span> <span class="mi">4</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+
+<span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;AIOHTTP_NO_EXTENSIONS&#39;</span><span class="p">)):</span>
+    <span class="n">_websocket_mask</span> <span class="o">=</span> <span class="n">_websocket_mask_python</span>
+<span class="k">else</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">._websocket</span> <span class="kn">import</span> <span class="n">_websocket_mask_cython</span>
+        <span class="n">_websocket_mask</span> <span class="o">=</span> <span class="n">_websocket_mask_cython</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>  <span class="c"># pragma: no cover</span>
+        <span class="n">_websocket_mask</span> <span class="o">=</span> <span class="n">_websocket_mask_python</span>
+
+
+<span class="k">def</span> <span class="nf">parse_frame</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">continuation</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the next frame from the socket.&quot;&quot;&quot;</span>
+    <span class="c"># read header</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">first_byte</span><span class="p">,</span> <span class="n">second_byte</span> <span class="o">=</span> <span class="n">data</span>
+
+    <span class="n">fin</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_byte</span> <span class="o">&gt;&gt;</span> <span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span>
+    <span class="n">rsv1</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_byte</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span>
+    <span class="n">rsv2</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_byte</span> <span class="o">&gt;&gt;</span> <span class="mi">5</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span>
+    <span class="n">rsv3</span> <span class="o">=</span> <span class="p">(</span><span class="n">first_byte</span> <span class="o">&gt;&gt;</span> <span class="mi">4</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span>
+    <span class="n">opcode</span> <span class="o">=</span> <span class="n">first_byte</span> <span class="o">&amp;</span> <span class="mh">0xf</span>
+
+    <span class="c"># frame-fin = %x0 ; more frames of this message follow</span>
+    <span class="c">#           / %x1 ; final frame of this message</span>
+    <span class="c"># frame-rsv1 = %x0 ; 1 bit, MUST be 0 unless negotiated otherwise</span>
+    <span class="c"># frame-rsv2 = %x0 ; 1 bit, MUST be 0 unless negotiated otherwise</span>
+    <span class="c"># frame-rsv3 = %x0 ; 1 bit, MUST be 0 unless negotiated otherwise</span>
+    <span class="k">if</span> <span class="n">rsv1</span> <span class="ow">or</span> <span class="n">rsv2</span> <span class="ow">or</span> <span class="n">rsv3</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+            <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+            <span class="s">&#39;Received frame with non-zero reserved bits&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">opcode</span> <span class="o">&gt;</span> <span class="mh">0x7</span> <span class="ow">and</span> <span class="n">fin</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+            <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+            <span class="s">&#39;Received fragmented control frame&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fin</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">opcode</span> <span class="o">==</span> <span class="n">OPCODE_CONTINUATION</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">continuation</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+            <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+            <span class="s">&#39;Received new fragment frame with non-zero &#39;</span>
+            <span class="s">&#39;opcode {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">opcode</span><span class="p">))</span>
+
+    <span class="n">has_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">second_byte</span> <span class="o">&gt;&gt;</span> <span class="mi">7</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mi">1</span>
+    <span class="n">length</span> <span class="o">=</span> <span class="p">(</span><span class="n">second_byte</span><span class="p">)</span> <span class="o">&amp;</span> <span class="mh">0x7f</span>
+
+    <span class="c"># Control frames MUST have a payload length of 125 bytes or less</span>
+    <span class="k">if</span> <span class="n">opcode</span> <span class="o">&gt;</span> <span class="mh">0x7</span> <span class="ow">and</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="mi">125</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">WebSocketError</span><span class="p">(</span>
+            <span class="n">CLOSE_PROTOCOL_ERROR</span><span class="p">,</span>
+            <span class="s">&quot;Control frame payload cannot be larger than 125 bytes&quot;</span><span class="p">)</span>
+
+    <span class="c"># read payload</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="mi">126</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">UNPACK_LEN2</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="mi">126</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">UNPACK_LEN3</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">has_mask</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">length</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">buf</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="nb">bytearray</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">has_mask</span><span class="p">:</span>
+        <span class="n">payload</span> <span class="o">=</span> <span class="n">_websocket_mask</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span> <span class="n">payload</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fin</span><span class="p">,</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">payload</span>
+
+
+<div class="viewcode-block" id="WebSocketWriter"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketWriter">[docs]</a><span class="k">class</span> <span class="nc">WebSocketWriter</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">writer</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">use_mask</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">random</span><span class="o">=</span><span class="n">random</span><span class="o">.</span><span class="n">Random</span><span class="p">()):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">writer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_mask</span> <span class="o">=</span> <span class="n">use_mask</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">randrange</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span>
+
+    <span class="k">def</span> <span class="nf">_send_frame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">opcode</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send a frame over the websocket with message as its payload.&quot;&quot;&quot;</span>
+        <span class="n">msg_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+        <span class="n">use_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_mask</span>
+        <span class="k">if</span> <span class="n">use_mask</span><span class="p">:</span>
+            <span class="n">mask_bit</span> <span class="o">=</span> <span class="mh">0x80</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask_bit</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="n">msg_length</span> <span class="o">&lt;</span> <span class="mi">126</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">PACK_LEN1</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">|</span> <span class="n">opcode</span><span class="p">,</span> <span class="n">msg_length</span> <span class="o">|</span> <span class="n">mask_bit</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">msg_length</span> <span class="o">&lt;</span> <span class="p">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">):</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">PACK_LEN2</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">|</span> <span class="n">opcode</span><span class="p">,</span> <span class="mi">126</span> <span class="o">|</span> <span class="n">mask_bit</span><span class="p">,</span> <span class="n">msg_length</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">header</span> <span class="o">=</span> <span class="n">PACK_LEN3</span><span class="p">(</span><span class="mh">0x80</span> <span class="o">|</span> <span class="n">opcode</span><span class="p">,</span> <span class="mi">127</span> <span class="o">|</span> <span class="n">mask_bit</span><span class="p">,</span> <span class="n">msg_length</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">use_mask</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mh">0xffffffff</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">to_bytes</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="s">&#39;big&#39;</span><span class="p">)</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">_websocket_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="nb">bytearray</span><span class="p">(</span><span class="n">message</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span> <span class="o">+</span> <span class="n">mask</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">MSG_SIZE</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">header</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+
+<div class="viewcode-block" id="WebSocketWriter.pong"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketWriter.pong">[docs]</a>    <span class="k">def</span> <span class="nf">pong</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send pong message.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OPCODE_PONG</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WebSocketWriter.ping"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketWriter.ping">[docs]</a>    <span class="k">def</span> <span class="nf">ping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send ping message.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OPCODE_PING</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WebSocketWriter.send"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketWriter.send">[docs]</a>    <span class="k">def</span> <span class="nf">send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">binary</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Send a frame over the websocket with message as its payload.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">binary</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OPCODE_BINARY</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">OPCODE_TEXT</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="WebSocketWriter.close"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.WebSocketWriter.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">b</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the websocket, sending the specified code and message.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s">&#39;utf-8&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_send_frame</span><span class="p">(</span>
+            <span class="n">PACK_CLOSE_CODE</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="o">+</span> <span class="n">message</span><span class="p">,</span> <span class="n">opcode</span><span class="o">=</span><span class="n">OPCODE_CLOSE</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="do_handshake"><a class="viewcode-back" href="../../api.html#aiohttp.websocket.do_handshake">[docs]</a><span class="k">def</span> <span class="nf">do_handshake</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">headers</span><span class="p">,</span> <span class="n">transport</span><span class="p">,</span> <span class="n">protocols</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot;Prepare WebSocket handshake.</span>
+
+<span class="sd">    It return http response code, response headers, websocket parser,</span>
+<span class="sd">    websocket writer. It does not perform any IO.</span>
+
+<span class="sd">    `protocols` is a sequence of known protocols. On successful handshake,</span>
+<span class="sd">    the returned response headers contain the first protocol in this list</span>
+<span class="sd">    which the server also knows.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># WebSocket accepts only GET</span>
+    <span class="k">if</span> <span class="n">method</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">!=</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpProcessingError</span><span class="p">(</span>
+            <span class="n">code</span><span class="o">=</span><span class="mi">405</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="p">((</span><span class="n">hdrs</span><span class="o">.</span><span class="n">ALLOW</span><span class="p">,</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">METH_GET</span><span class="p">),))</span>
+
+    <span class="k">if</span> <span class="s">&#39;websocket&#39;</span> <span class="o">!=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpBadRequest</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="s">&#39;No WebSocket UPGRADE hdr: {}</span><span class="se">\n</span><span class="s"> Can &#39;</span>
+            <span class="s">&#39;&quot;Upgrade&quot; only to &quot;WebSocket&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="s">&#39;upgrade&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpBadRequest</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="s">&#39;No CONNECTION upgrade hdr: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">)))</span>
+
+    <span class="c"># find common sub-protocol between client and server</span>
+    <span class="n">protocol</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span> <span class="ow">in</span> <span class="n">headers</span><span class="p">:</span>
+        <span class="n">req_protocols</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">proto</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span>
+                         <span class="n">headers</span><span class="p">[</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)]</span>
+
+        <span class="k">for</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">req_protocols</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">proto</span> <span class="ow">in</span> <span class="n">protocols</span><span class="p">:</span>
+                <span class="n">protocol</span> <span class="o">=</span> <span class="n">proto</span>
+                <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># No overlap found: Return no protocol as per spec</span>
+            <span class="n">ws_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s">&#39;Client protocols </span><span class="si">%r</span><span class="s"> don’t overlap server-known ones </span><span class="si">%r</span><span class="s">&#39;</span><span class="p">,</span>
+                <span class="n">protocols</span><span class="p">,</span> <span class="n">req_protocols</span><span class="p">)</span>
+
+    <span class="c"># check supported version</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_VERSION</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">version</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;13&#39;</span><span class="p">,</span> <span class="s">&#39;8&#39;</span><span class="p">,</span> <span class="s">&#39;7&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpBadRequest</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="s">&#39;Unsupported version: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">version</span><span class="p">),</span>
+            <span class="n">headers</span><span class="o">=</span><span class="p">((</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_VERSION</span><span class="p">,</span> <span class="s">&#39;13&#39;</span><span class="p">),))</span>
+
+    <span class="c"># check client handshake for validity</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_KEY</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">key</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">16</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpBadRequest</span><span class="p">(</span>
+                <span class="n">message</span><span class="o">=</span><span class="s">&#39;Handshake error: {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+    <span class="k">except</span> <span class="n">binascii</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="o">.</span><span class="n">HttpBadRequest</span><span class="p">(</span>
+            <span class="n">message</span><span class="o">=</span><span class="s">&#39;Handshake error: {!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">))</span> <span class="kn">from</span> <span class="bp">None</span>
+
+    <span class="n">response_headers</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">UPGRADE</span><span class="p">,</span> <span class="s">&#39;websocket&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">CONNECTION</span><span class="p">,</span> <span class="s">&#39;upgrade&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">TRANSFER_ENCODING</span><span class="p">,</span> <span class="s">&#39;chunked&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_ACCEPT</span><span class="p">,</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64encode</span><span class="p">(</span>
+            <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span> <span class="o">+</span> <span class="n">WS_KEY</span><span class="p">)</span><span class="o">.</span><span class="n">digest</span><span class="p">())</span><span class="o">.</span><span class="n">decode</span><span class="p">())]</span>
+
+    <span class="k">if</span> <span class="n">protocol</span><span class="p">:</span>
+        <span class="n">response_headers</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">hdrs</span><span class="o">.</span><span class="n">SEC_WEBSOCKET_PROTOCOL</span><span class="p">,</span> <span class="n">protocol</span><span class="p">))</span>
+
+    <span class="c"># response code, headers, parser, writer, protocol</span>
+    <span class="k">return</span> <span class="p">(</span><span class="mi">101</span><span class="p">,</span>
+            <span class="n">response_headers</span><span class="p">,</span>
+            <span class="n">WebSocketParser</span><span class="p">,</span>
+            <span class="n">WebSocketWriter</span><span class="p">(</span><span class="n">transport</span><span class="p">),</span>
+            <span class="n">protocol</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="../../index.html">
+    <img class="logo" src="../../_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../client.html">HTTP Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

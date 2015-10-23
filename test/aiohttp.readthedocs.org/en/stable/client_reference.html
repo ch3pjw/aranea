@@ -1,0 +1,1406 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>HTTP Client Reference &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="WebSockets Client" href="client_websockets.html" />
+    <link rel="prev" title="HTTP Client" href="client.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/client_reference.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "client_reference",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "client_reference";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="http-client-reference">
+<span id="aiohttp-client-reference"></span><h1>HTTP Client Reference<a class="headerlink" href="#http-client-reference" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-aiohttp"></span><div class="section" id="client-session">
+<h2>Client Session<a class="headerlink" href="#client-session" title="Permalink to this headline">¶</a></h2>
+<p>Client session is the recommended interface for making HTTP requests.</p>
+<p>Session encapsulates <em>connection pool</em> (<em>connector</em> instance) and
+supports keepalives by default.</p>
+<p>Usage example:</p>
+<div class="highlight-python"><div class="highlight"><pre>import aiohttp
+import asyncio
+
+async def fetch(client):
+    async with client.get(&#39;http://python.org&#39;) as resp:
+    assert resp.status == 200
+    print(await resp.text())
+
+with aiohttp.ClientSession() as client:
+    asyncio.get_event_loop().run_until_complete(fetch(client))
+</pre></div>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.17.</span></p>
+</div>
+<p>The client session supports context manager protocol for self closing.</p>
+<dl class="class">
+<dt id="aiohttp.ClientSession">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">ClientSession</code><span class="sig-paren">(</span><em>*</em>, <em>connector=None</em>, <em>loop=None</em>, <em>cookies=None</em>, <em>headers=None</em>, <em>skip_auto_headers=None</em>, <em>auth=None</em>, <em>request_class=ClientRequest</em>, <em>response_class=ClientResponse</em>, <em>ws_response_class=ClientWebSocketResponse</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession" title="Permalink to this definition">¶</a></dt>
+<dd><p>The class for creating client sessions and making requests.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>connector</strong> (<em>aiohttp.connector.BaseConnector</em>) &#8211; BaseConnector
+sub-class instance to support connection pooling.</li>
+<li><strong>loop</strong> &#8211; <p><a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop" title="(in Python v3.5)"><span class="xref std std-ref">event loop</span></a> used for
+processing HTTP requests.</p>
+<p>If <em>loop</em> is <code class="docutils literal"><span class="pre">None</span></code> the constructor
+borrows it from <em>connector</em> if specified.</p>
+<p><a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloops.html#asyncio.get_event_loop" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">asyncio.get_event_loop()</span></code></a> is used for getting default event
+loop otherwise.</p>
+</li>
+<li><strong>cookies</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; Cookies to send with the request (optional)</li>
+<li><strong>headers</strong> &#8211; <p>HTTP Headers to send with
+the request (optional).</p>
+<p>May be either <em>iterable of key-value pairs</em> or
+<a class="reference external" href="http://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">Mapping</span></code></a>
+(e.g. <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a>,
+<a class="reference internal" href="multidict.html#aiohttp.CIMultiDict" title="aiohttp.CIMultiDict"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDict</span></code></a>).</p>
+</li>
+<li><strong>skip_auto_headers</strong> &#8211; <p>set of headers for which autogeneration
+should be skipped.</p>
+<p><em>aiohttp</em> autogenerates headers like <code class="docutils literal"><span class="pre">User-Agent</span></code> or
+<code class="docutils literal"><span class="pre">Content-Type</span></code> if these headers are not explicitly
+passed. Using <code class="docutils literal"><span class="pre">skip_auto_headers</span></code> parameter allows to skip
+that generation. Note that <code class="docutils literal"><span class="pre">Content-Length</span></code> autogeneration can&#8217;t
+be skipped.</p>
+<p>Iterable of <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <a class="reference internal" href="multidict.html#aiohttp.upstr" title="aiohttp.upstr"><code class="xref py py-class docutils literal"><span class="pre">upstr</span></code></a> (optional)</p>
+</li>
+<li><strong>auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; BasicAuth named tuple that represents
+HTTP Basic Authorization (optional)</li>
+<li><strong>request_class</strong> &#8211; Request class implementation. <code class="docutils literal"><span class="pre">ClientRequest</span></code> by
+default.</li>
+<li><strong>response_class</strong> &#8211; Response class
+implementation. <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> by
+default.</li>
+<li><strong>ws_response_class</strong> &#8211; <p>WebSocketResponse class implementation.
+<code class="docutils literal"><span class="pre">ClientWebSocketResponse</span></code> by default.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.16: </span><em>request_class</em> default changed from <code class="docutils literal"><span class="pre">None</span></code> to <code class="docutils literal"><span class="pre">ClientRequest</span></code></p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.16: </span><em>response_class</em> default changed from <code class="docutils literal"><span class="pre">None</span></code> to <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a></p>
+</div>
+<dl class="attribute">
+<dt id="aiohttp.ClientSession.closed">
+<code class="descname">closed</code><a class="headerlink" href="#aiohttp.ClientSession.closed" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="docutils literal"><span class="pre">True</span></code> if the session has been closed, <code class="docutils literal"><span class="pre">False</span></code> otherwise.</p>
+<p>A read-only property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientSession.connector">
+<code class="descname">connector</code><a class="headerlink" href="#aiohttp.ClientSession.connector" title="Permalink to this definition">¶</a></dt>
+<dd><p><code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.BaseConnector</span></code> derived instance used
+for the session.</p>
+<p>A read-only property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientSession.cookies">
+<code class="descname">cookies</code><a class="headerlink" href="#aiohttp.ClientSession.cookies" title="Permalink to this definition">¶</a></dt>
+<dd><p>The session cookies, <a class="reference external" href="http://docs.python.org/3/library/http.cookies.html#http.cookies.SimpleCookie" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">http.cookies.SimpleCookie</span></code></a> instance.</p>
+<p>A read-only property. Overriding <cite>session.cookies = new_val</cite> is
+forbidden, but you may modify the object in-place if needed.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.request">
+<em class="property">coroutine </em><code class="descname">request</code><span class="sig-paren">(</span><em>method</em>, <em>url</em>, <em>*</em>, <em>params=None</em>, <em>data=None</em>, <em>headers=None</em>, <em>skip_auto_headers=None</em>, <em>auth=None</em>, <em>allow_redirects=True</em>, <em>max_redirects=10</em>, <em>encoding='utf-8'</em>, <em>version=HttpVersion(major=1</em>, <em>minor=1)</em>, <em>compress=None</em>, <em>chunked=None</em>, <em>expect100=False</em>, <em>read_until_eof=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs an asynchronous HTTP request. Returns a response object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; HTTP method</li>
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>params</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; Parameters to be sent in the query
+string of the new request (optional)</li>
+<li><strong>data</strong> &#8211; Dictionary, bytes, or file-like object to
+send in the body of the request (optional)</li>
+<li><strong>headers</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; HTTP Headers to send with
+the request (optional)</li>
+<li><strong>skip_auto_headers</strong> &#8211; <p>set of headers for which autogeneration
+should be skipped.</p>
+<p><em>aiohttp</em> autogenerates headers like <code class="docutils literal"><span class="pre">User-Agent</span></code> or
+<code class="docutils literal"><span class="pre">Content-Type</span></code> if these headers are not explicitly
+passed. Using <code class="docutils literal"><span class="pre">skip_auto_headers</span></code> parameter allows to skip
+that generation.</p>
+<p>Iterable of <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> or <a class="reference internal" href="multidict.html#aiohttp.upstr" title="aiohttp.upstr"><code class="xref py py-class docutils literal"><span class="pre">upstr</span></code></a>
+(optional)</p>
+</li>
+<li><strong>auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; BasicAuth named tuple that
+represents HTTP Basic Authorization
+(optional)</li>
+<li><strong>allow_redirects</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; If set to <code class="docutils literal"><span class="pre">False</span></code>, do not follow redirects.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+<li><strong>version</strong> (<a class="reference internal" href="api.html#aiohttp.protocol.HttpVersion" title="aiohttp.protocol.HttpVersion"><em>aiohttp.protocol.HttpVersion</em></a>) &#8211; Request HTTP version
+(optional)</li>
+<li><strong>compress</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Set to <code class="docutils literal"><span class="pre">True</span></code> if request has to be compressed
+with deflate encoding.
+<code class="docutils literal"><span class="pre">None</span></code> by default (optional).</li>
+<li><strong>chunked</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; Set to chunk size for chunked transfer encoding.
+<code class="docutils literal"><span class="pre">None</span></code> by default (optional).</li>
+<li><strong>expect100</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Expect 100-continue response from server.
+<code class="docutils literal"><span class="pre">False</span></code> by default (optional).</li>
+<li><strong>read_until_eof</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Read response until EOF if response
+does not have Content-Length header.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.get">
+<em class="property">coroutine </em><code class="descname">get</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>allow_redirects=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">GET</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>allow_redirects</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; If set to <code class="docutils literal"><span class="pre">False</span></code>, do not follow redirects.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.post">
+<em class="property">coroutine </em><code class="descname">post</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">POST</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>data</strong> &#8211; Dictionary, bytes, or file-like object to
+send in the body of the request (optional)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.put">
+<em class="property">coroutine </em><code class="descname">put</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">PUT</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>data</strong> &#8211; Dictionary, bytes, or file-like object to
+send in the body of the request (optional)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.delete">
+<em class="property">coroutine </em><code class="descname">delete</code><span class="sig-paren">(</span><em>url</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">DELETE</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.head">
+<em class="property">coroutine </em><code class="descname">head</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>allow_redirects=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.head"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.head" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">HEAD</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>allow_redirects</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; If set to <code class="docutils literal"><span class="pre">False</span></code>, do not follow redirects.
+<code class="docutils literal"><span class="pre">False</span></code> by default (optional).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.options">
+<em class="property">coroutine </em><code class="descname">options</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>allow_redirects=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform an <code class="docutils literal"><span class="pre">OPTIONS</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>allow_redirects</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; If set to <code class="docutils literal"><span class="pre">False</span></code>, do not follow redirects.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.patch">
+<em class="property">coroutine </em><code class="descname">patch</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.patch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a <code class="docutils literal"><span class="pre">PATCH</span></code> request.</p>
+<p>In order to modify inner
+<code class="xref py py-meth docutils literal"><span class="pre">request</span></code>
+parameters, provide <cite>kwargs</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Request URL</li>
+<li><strong>data</strong> &#8211; Dictionary, bytes, or file-like object to
+send in the body of the request (optional)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.ws_connect">
+<em class="property">coroutine </em><code class="descname">ws_connect</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>protocols=()</em>, <em>timeout=10.0</em>, <em>auth=None</em>, <em>autoclose=True</em>, <em>autoping=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.ws_connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.ws_connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a websocket connection. Returns a
+<a class="reference internal" href="client_websockets.html#aiohttp.ClientWebSocketResponse" title="aiohttp.ClientWebSocketResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientWebSocketResponse</span></code></a> object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Websocket server url</li>
+<li><strong>protocols</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.5)"><em>tuple</em></a>) &#8211; Websocket protocols</li>
+<li><strong>timeout</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#float" title="(in Python v3.5)"><em>float</em></a>) &#8211; Timeout for websocket read. 10 seconds by default</li>
+<li><strong>auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; BasicAuth named tuple that
+represents HTTP Basic Authorization
+(optional)</li>
+<li><strong>autoclose</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Automatically close websocket connection on close
+message from server. If <cite>autoclose</cite> is False
+them close procedure has to be handled manually</li>
+<li><strong>autoping</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; automatically send <cite>pong</cite> on <cite>ping</cite>
+message from server</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16: </span>Add <a class="reference internal" href="client_websockets.html#aiohttp.ws_connect" title="aiohttp.ws_connect"><code class="xref py py-meth docutils literal"><span class="pre">ws_connect()</span></code></a>.</p>
+</div>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.18: </span>Add <em>auth</em> parameter.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close underlying connector.</p>
+<p>Release all acquired resources.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientSession.detach">
+<code class="descname">detach</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#ClientSession.detach"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ClientSession.detach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detach connector from session without closing the former.</p>
+<p>Session is switched to closed state anyway.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="basic-api">
+<h2>Basic API<a class="headerlink" href="#basic-api" title="Permalink to this headline">¶</a></h2>
+<p>While we encourage <a class="reference internal" href="#aiohttp.ClientSession" title="aiohttp.ClientSession"><code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code></a> usage we also provide simple
+coroutines for making HTTP requests.</p>
+<p>Basic API is good for performing simple HTTP requests without
+keepaliving, cookies and complex connection stuff like properly configured SSL
+certification chaining.</p>
+<dl class="function">
+<dt id="aiohttp.request">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">request</code><span class="sig-paren">(</span><em>method</em>, <em>url</em>, <em>*</em>, <em>params=None</em>, <em>data=None</em>, <em>headers=None</em>, <em>cookies=None</em>, <em>auth=None</em>, <em>allow_redirects=True</em>, <em>max_redirects=10</em>, <em>encoding='utf-8'</em>, <em>version=HttpVersion(major=1</em>, <em>minor=1)</em>, <em>compress=None</em>, <em>chunked=None</em>, <em>expect100=False</em>, <em>connector=None</em>, <em>loop=None</em>, <em>read_until_eof=True</em>, <em>request_class=None</em>, <em>response_class=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#request"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform an asynchronous HTTP request. Return a response object
+(<a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>method</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; HTTP method</li>
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL</li>
+<li><strong>params</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; Parameters to be sent in the query
+string of the new request (optional)</li>
+<li><strong>data</strong> &#8211; Dictionary, bytes, or file-like object to
+send in the body of the request (optional)</li>
+<li><strong>headers</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; HTTP Headers to send with
+the request (optional)</li>
+<li><strong>cookies</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><em>dict</em></a>) &#8211; Cookies to send with the request (optional)</li>
+<li><strong>auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; BasicAuth named tuple that represents
+HTTP Basic Authorization (optional)</li>
+<li><strong>allow_redirects</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; If set to <code class="docutils literal"><span class="pre">False</span></code>, do not follow redirects.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+<li><strong>version</strong> (<a class="reference internal" href="api.html#aiohttp.protocol.HttpVersion" title="aiohttp.protocol.HttpVersion"><em>aiohttp.protocol.HttpVersion</em></a>) &#8211; Request HTTP version (optional)</li>
+<li><strong>compress</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Set to <code class="docutils literal"><span class="pre">True</span></code> if request has to be compressed
+with deflate encoding.
+<code class="docutils literal"><span class="pre">None</span></code> by default (optional).</li>
+<li><strong>chunked</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; Set to chunk size for chunked transfer encoding.
+<code class="docutils literal"><span class="pre">None</span></code> by default (optional).</li>
+<li><strong>expect100</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Expect 100-continue response from server.
+<code class="docutils literal"><span class="pre">False</span></code> by default (optional).</li>
+<li><strong>connector</strong> (<em>aiohttp.connector.BaseConnector</em>) &#8211; BaseConnector sub-class
+instance to support connection pooling.</li>
+<li><strong>read_until_eof</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Read response until EOF if response
+does not have Content-Length header.
+<code class="docutils literal"><span class="pre">True</span></code> by default (optional).</li>
+<li><strong>request_class</strong> &#8211; Custom Request class implementation (optional)</li>
+<li><strong>response_class</strong> &#8211; Custom Response class implementation (optional)</li>
+<li><strong>loop</strong> &#8211; <a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop" title="(in Python v3.5)"><span class="xref std std-ref">event loop</span></a>
+used for processing HTTP requests.
+If param is <code class="docutils literal"><span class="pre">None</span></code>, <a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloops.html#asyncio.get_event_loop" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">asyncio.get_event_loop()</span></code></a>
+is used for getting default event loop, but we strongly
+recommend to use explicit loops everywhere.
+(optional)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">Return ClientResponse:</th></tr>
+<tr class="field-even field"><td>&nbsp;</td><td class="field-body"><p class="first last">a <a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">client</span> <span class="pre">response</span></code></a> object.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre>import aiohttp
+
+async def fetch():
+    async with aiohttp.request(&#39;GET&#39;, &#39;http://python.org/&#39;) as resp:
+        assert resp.status == 200
+        print(await resp.text())
+</pre></div>
+</div>
+<dl class="function">
+<dt id="aiohttp.get">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">get</code><span class="sig-paren">(</span><em>url</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#get"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.get" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a GET request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.options">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">options</code><span class="sig-paren">(</span><em>url</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a OPTIONS request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.head">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">head</code><span class="sig-paren">(</span><em>url</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#head"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.head" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a HEAD request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.delete">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">delete</code><span class="sig-paren">(</span><em>url</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#delete"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a DELETE request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.post">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">post</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#post"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.post" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a POST request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.put">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">put</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#put"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.put" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a PUT request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="aiohttp.patch">
+<em class="property">coroutine </em><code class="descclassname">aiohttp.</code><code class="descname">patch</code><span class="sig-paren">(</span><em>url</em>, <em>*</em>, <em>data=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/client.html#patch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a PATCH request.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>url</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Requested URL.</li>
+<li><strong>**kwargs</strong> &#8211; Optional arguments that <a class="reference internal" href="#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">request()</span></code></a> takes.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> or derived from</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="connectors">
+<h2>Connectors<a class="headerlink" href="#connectors" title="Permalink to this headline">¶</a></h2>
+<p>Connectors are transports for aiohttp client API.</p>
+<p>There are standard connectors:</p>
+<ol class="arabic simple">
+<li><a class="reference internal" href="#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a> for regular <em>TCP sockets</em> (both <em>HTTP</em> and
+<em>HTTPS</em> schemes supported).</li>
+<li><a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> for connecting via HTTP proxy.</li>
+<li><a class="reference internal" href="#aiohttp.UnixConnector" title="aiohttp.UnixConnector"><code class="xref py py-class docutils literal"><span class="pre">UnixConnector</span></code></a> for connecting via UNIX socket (it&#8217;s used mostly for
+testing purposes).</li>
+</ol>
+<p>All connector classes should be derived from <a class="reference internal" href="#aiohttp.BaseConnector" title="aiohttp.BaseConnector"><code class="xref py py-class docutils literal"><span class="pre">BaseConnector</span></code></a>.</p>
+<p>By default all <em>connectors</em> except <a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> support
+<em>keep-alive connections</em> (behavior is controlled by <em>force_close</em>
+constructor&#8217;s parameter).</p>
+<div class="section" id="baseconnector">
+<h3>BaseConnector<a class="headerlink" href="#baseconnector" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="aiohttp.BaseConnector">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">BaseConnector</code><span class="sig-paren">(</span><em>*</em>, <em>conn_timeout=None</em>, <em>keepalive_timeout=30</em>, <em>limit=None</em>, <em>share_cookies=False</em>, <em>force_close=False</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#BaseConnector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.BaseConnector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base class for all connectors.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>conn_timeout</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#float" title="(in Python v3.5)"><em>float</em></a>) &#8211; timeout for connection establishing
+(optional). Values <code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">None</span></code>
+mean no timeout.</li>
+<li><strong>keepalive_timeout</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#float" title="(in Python v3.5)"><em>float</em></a>) &#8211; timeout for connection reusing
+after releasing (optional). Values
+<code class="docutils literal"><span class="pre">0</span></code> or <code class="docutils literal"><span class="pre">None</span></code> mean no timeout.</li>
+<li><strong>limit</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; limit for simultaneous connections to the same
+endpoint.  Endpoints are the same if they are
+have equal <code class="docutils literal"><span class="pre">(host,</span> <span class="pre">port,</span> <span class="pre">is_ssl)</span></code> triple.
+If <em>limit</em> is <code class="docutils literal"><span class="pre">None</span></code> the connector has no limit.</li>
+<li><strong>share_cookies</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; update <code class="xref py py-attr docutils literal"><span class="pre">cookies</span></code> on connection
+processing (optional, deprecated).</li>
+<li><strong>force_close</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; do close underlying sockets after
+connection releasing (optional).</li>
+<li><strong>loop</strong> &#8211; <a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloop.html#asyncio-event-loop" title="(in Python v3.5)"><span class="xref std std-ref">event loop</span></a>
+used for handling connections.
+If param is <code class="docutils literal"><span class="pre">None</span></code>, <a class="reference external" href="http://docs.python.org/3/library/asyncio-eventloops.html#asyncio.get_event_loop" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">asyncio.get_event_loop()</span></code></a>
+is used for getting default event loop, but we strongly
+recommend to use explicit loops everywhere.
+(optional)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.15.2: </span><em>share_cookies</em> parameter is deprecated, use
+<code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code> for handling cookies for
+client connections.</p>
+</div>
+<dl class="attribute">
+<dt id="aiohttp.BaseConnector.closed">
+<code class="descname">closed</code><a class="headerlink" href="#aiohttp.BaseConnector.closed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only property, <code class="docutils literal"><span class="pre">True</span></code> if connector is closed.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.BaseConnector.force_close">
+<code class="descname">force_close</code><a class="headerlink" href="#aiohttp.BaseConnector.force_close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read-only property, <code class="docutils literal"><span class="pre">True</span></code> if connector should ultimately
+close connections on releasing.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.BaseConnector.limit">
+<code class="descname">limit</code><a class="headerlink" href="#aiohttp.BaseConnector.limit" title="Permalink to this definition">¶</a></dt>
+<dd><p>The limit for simultaneous connections to the same
+endpoint.</p>
+<p>Endpoints are the same if they are have equal <code class="docutils literal"><span class="pre">(host,</span> <span class="pre">port,</span>
+<span class="pre">is_ssl)</span></code> triple.</p>
+<p>If <em>limit</em> is <code class="docutils literal"><span class="pre">None</span></code> the connector has no limit (default).</p>
+<p>Read-only property.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.BaseConnector.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#BaseConnector.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.BaseConnector.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close all opened connections.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.BaseConnector.connect">
+<em class="property">coroutine </em><code class="descname">connect</code><span class="sig-paren">(</span><em>request</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#BaseConnector.connect"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.BaseConnector.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a free connection from pool or create new one if connection
+is absent in the pool.</p>
+<p>The call may be paused if <a class="reference internal" href="#aiohttp.BaseConnector.limit" title="aiohttp.BaseConnector.limit"><code class="xref py py-attr docutils literal"><span class="pre">limit</span></code></a> is exhausted until used
+connections returns to pool.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>request</strong> (<em>aiohttp.client.ClientRequest</em>) &#8211; request object
+which is connection
+initiator.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><a class="reference internal" href="#aiohttp.Connection" title="aiohttp.Connection"><code class="xref py py-class docutils literal"><span class="pre">Connection</span></code></a> object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.BaseConnector._create_connection">
+<em class="property">coroutine </em><code class="descname">_create_connection</code><span class="sig-paren">(</span><em>req</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#BaseConnector._create_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.BaseConnector._create_connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Abstract method for actual connection establishing, should be
+overridden in subclasses.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="tcpconnector">
+<h3>TCPConnector<a class="headerlink" href="#tcpconnector" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="aiohttp.TCPConnector">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">TCPConnector</code><span class="sig-paren">(</span><em>*</em>, <em>verify_ssl=True</em>, <em>fingerprint=None</em>, <em>use_dns_cache=False</em>, <em>family=0</em>, <em>ssl_context=None</em>, <em>conn_timeout=None</em>, <em>keepalive_timeout=30</em>, <em>limit=None</em>, <em>share_cookies=False</em>, <em>force_close=False</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#TCPConnector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.TCPConnector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Connector for working with <em>HTTP</em> and <em>HTTPS</em> via <em>TCP</em> sockets.</p>
+<p>The most common transport. When you don&#8217;t know what connector type
+to use, use a <a class="reference internal" href="#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a> instance.</p>
+<p><a class="reference internal" href="#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a> inherits from <a class="reference internal" href="#aiohttp.BaseConnector" title="aiohttp.BaseConnector"><code class="xref py py-class docutils literal"><span class="pre">BaseConnector</span></code></a>.</p>
+<p>Constructor accepts all parameters suitable for
+<a class="reference internal" href="#aiohttp.BaseConnector" title="aiohttp.BaseConnector"><code class="xref py py-class docutils literal"><span class="pre">BaseConnector</span></code></a> plus several TCP-specific ones:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>verify_ssl</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; Perform SSL certificate validation for
+<em>HTTPS</em> requests (enabled by default). May be disabled to
+skip validation for sites with invalid certificates.</li>
+<li><strong>fingerprint</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><em>bytes</em></a>) &#8211; <p>Pass the binary MD5, SHA1, or SHA256
+digest of the expected certificate in DER format to verify
+that the certificate the server presents matches. Useful
+for <a class="reference external" href="https://en.wikipedia.org/wiki/Transport_Layer_Security#Certificate_pinning">certificate pinning</a>.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</li>
+<li><strong>use_dns_cache</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; <p>use internal cache for DNS lookups, <code class="docutils literal"><span class="pre">False</span></code>
+by default.</p>
+<p>Enabling an option <em>may</em> speedup connection
+establishing a bit but may introduce some
+<em>side effects</em> also.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.17.</span></p>
+</div>
+</li>
+<li><strong>resolve</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><em>bool</em></a>) &#8211; <p>alias for <em>use_dns_cache</em> parameter.</p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.17.</span></p>
+</div>
+</li>
+<li><strong>family</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><em>int</em></a>) &#8211; <dl class="docutils">
+<dt>TCP socket family, both IPv4 and IPv6 by default.</dt>
+<dd>For <em>IPv4</em> only use <code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET</span></code>,
+for  <em>IPv6</em> only &#8211; <code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET6</span></code>.</dd>
+</dl>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.18: </span><em>family</em> is <cite>0</cite> by default, that means both IPv4 and IPv6 are
+accepted. To specify only concrete version please pass
+<code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET</span></code> or <code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET6</span></code>
+explicitly.</p>
+</div>
+</li>
+<li><strong>ssl_context</strong> (<a class="reference external" href="http://docs.python.org/3/library/ssl.html#ssl.SSLContext" title="(in Python v3.5)"><em>ssl.SSLContext</em></a>) &#8211; <p>ssl context used for processing
+<em>HTTPS</em> requests (optional).</p>
+<p><em>ssl_context</em> may be used for configuring certification
+authority channel, supported SSL options etc.</p>
+</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.verify_ssl">
+<code class="descname">verify_ssl</code><a class="headerlink" href="#aiohttp.TCPConnector.verify_ssl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check <em>ssl certifications</em> if <code class="docutils literal"><span class="pre">True</span></code>.</p>
+<p>Read-only <a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a> property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.ssl_context">
+<code class="descname">ssl_context</code><a class="headerlink" href="#aiohttp.TCPConnector.ssl_context" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://docs.python.org/3/library/ssl.html#ssl.SSLContext" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">ssl.SSLContext</span></code></a> instance for <em>https</em> requests, read-only property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.family">
+<code class="descname">family</code><a class="headerlink" href="#aiohttp.TCPConnector.family" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>TCP</em> socket family e.g. <code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET</span></code> or
+<code class="xref py py-const docutils literal"><span class="pre">socket.AF_INET6</span></code></p>
+<p>Read-only property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.dns_cache">
+<code class="descname">dns_cache</code><a class="headerlink" href="#aiohttp.TCPConnector.dns_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use quick lookup in internal <em>DNS</em> cache for host names if <code class="docutils literal"><span class="pre">True</span></code>.</p>
+<p>Read-only <a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a> property.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.17.</span></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.resolve">
+<code class="descname">resolve</code><a class="headerlink" href="#aiohttp.TCPConnector.resolve" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for <a class="reference internal" href="#aiohttp.TCPConnector.dns_cache" title="aiohttp.TCPConnector.dns_cache"><code class="xref py py-attr docutils literal"><span class="pre">dns_cache</span></code></a>.</p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.17.</span></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.cached_hosts">
+<code class="descname">cached_hosts</code><a class="headerlink" href="#aiohttp.TCPConnector.cached_hosts" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cache of resolved hosts if <a class="reference internal" href="#aiohttp.TCPConnector.dns_cache" title="aiohttp.TCPConnector.dns_cache"><code class="xref py py-attr docutils literal"><span class="pre">dns_cache</span></code></a> is enabled.</p>
+<p>Read-only <a class="reference external" href="http://docs.python.org/3/library/types.html#types.MappingProxyType" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">types.MappingProxyType</span></code></a> property.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.17.</span></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.resolved_hosts">
+<code class="descname">resolved_hosts</code><a class="headerlink" href="#aiohttp.TCPConnector.resolved_hosts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for <a class="reference internal" href="#aiohttp.TCPConnector.cached_hosts" title="aiohttp.TCPConnector.cached_hosts"><code class="xref py py-attr docutils literal"><span class="pre">cached_hosts</span></code></a></p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.17.</span></p>
+</div>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.TCPConnector.fingerprint">
+<code class="descname">fingerprint</code><a class="headerlink" href="#aiohttp.TCPConnector.fingerprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>MD5, SHA1, or SHA256 hash of the expected certificate in DER
+format, or <code class="docutils literal"><span class="pre">None</span></code> if no certificate fingerprint check
+required.</p>
+<p>Read-only <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytes</span></code></a> property.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.TCPConnector.clear_dns_cache">
+<code class="descname">clear_dns_cache</code><span class="sig-paren">(</span><em>self</em>, <em>host=None</em>, <em>port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#TCPConnector.clear_dns_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.TCPConnector.clear_dns_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clear internal <em>DNS</em> cache.</p>
+<p>Remove specific entry if both <em>host</em> and <em>port</em> are specified,
+clear all cache otherwise.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.17.</span></p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.TCPConnector.clear_resolved_hosts">
+<code class="descname">clear_resolved_hosts</code><span class="sig-paren">(</span><em>self</em>, <em>host=None</em>, <em>port=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#TCPConnector.clear_resolved_hosts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.TCPConnector.clear_resolved_hosts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for <a class="reference internal" href="#aiohttp.TCPConnector.clear_dns_cache" title="aiohttp.TCPConnector.clear_dns_cache"><code class="xref py py-meth docutils literal"><span class="pre">clear_dns_cache()</span></code></a>.</p>
+<div class="deprecated">
+<p><span class="versionmodified">Deprecated since version 0.17.</span></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="proxyconnector">
+<h3>ProxyConnector<a class="headerlink" href="#proxyconnector" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="aiohttp.ProxyConnector">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">ProxyConnector</code><span class="sig-paren">(</span><em>proxy</em>, <em>*</em>, <em>proxy_auth=None</em>, <em>conn_timeout=None</em>, <em>keepalive_timeout=30</em>, <em>limit=None</em>, <em>share_cookies=False</em>, <em>force_close=True</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#ProxyConnector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.ProxyConnector" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP Proxy connector.</p>
+<p>Use <a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> for sending <em>HTTP/HTTPS</em> requests
+through <em>HTTP proxy</em>.</p>
+<p><a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> is inherited from <a class="reference internal" href="#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a>.</p>
+<p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn == ProxyConnector(proxy=&quot;http://some.proxy.com&quot;)
+session = ClientSession(connector=conn)
+async with session.get(&#39;http://python.org&#39;) as resp:
+    assert resp.status == 200
+</pre></div>
+</div>
+<p>Constructor accepts all parameters suitable for
+<a class="reference internal" href="#aiohttp.TCPConnector" title="aiohttp.TCPConnector"><code class="xref py py-class docutils literal"><span class="pre">TCPConnector</span></code></a> plus several proxy-specific ones:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>proxy</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; URL for proxy, e.g. <code class="docutils literal"><span class="pre">&quot;http://some.proxy.com&quot;</span></code>.</li>
+<li><strong>proxy_auth</strong> (<a class="reference internal" href="api.html#aiohttp.helpers.BasicAuth" title="aiohttp.helpers.BasicAuth"><em>aiohttp.helpers.BasicAuth</em></a>) &#8211; basic
+authentication info used for proxies with authorization.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last"><a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> in opposite to all other connectors
+<strong>doesn&#8217;t</strong> support <em>keep-alives</em> by default
+(<code class="xref py py-attr docutils literal"><span class="pre">force_close</span></code> is <code class="docutils literal"><span class="pre">True</span></code>).</p>
+</div>
+<div class="versionchanged">
+<p><span class="versionmodified">Changed in version 0.16: </span><em>force_close</em> parameter changed to <code class="docutils literal"><span class="pre">True</span></code> by default.</p>
+</div>
+<dl class="attribute">
+<dt id="aiohttp.ProxyConnector.proxy">
+<code class="descname">proxy</code><a class="headerlink" href="#aiohttp.ProxyConnector.proxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy <em>URL</em>, read-only <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> property.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ProxyConnector.proxy_auth">
+<code class="descname">proxy_auth</code><a class="headerlink" href="#aiohttp.ProxyConnector.proxy_auth" title="Permalink to this definition">¶</a></dt>
+<dd><p>Proxy authentication info, read-only <code class="xref py py-class docutils literal"><span class="pre">BasicAuth</span></code> property
+or <code class="docutils literal"><span class="pre">None</span></code> for proxy without authentication.</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.16.</span></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="unixconnector">
+<h3>UnixConnector<a class="headerlink" href="#unixconnector" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="aiohttp.UnixConnector">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">UnixConnector</code><span class="sig-paren">(</span><em>path</em>, <em>*</em>, <em>conn_timeout=None</em>, <em>keepalive_timeout=30</em>, <em>limit=None</em>, <em>share_cookies=False</em>, <em>force_close=False</em>, <em>loop=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/aiohttp/connector.html#UnixConnector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#aiohttp.UnixConnector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unix socket connector.</p>
+<p>Use <a class="reference internal" href="#aiohttp.ProxyConnector" title="aiohttp.ProxyConnector"><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code></a> for sending <em>HTTP/HTTPS</em> requests
+through <em>UNIX Sockets</em> as underlying transport.</p>
+<p>UNIX sockets are handy for writing tests and making very fast
+connections between processes on the same host.</p>
+<p><a class="reference internal" href="#aiohttp.UnixConnector" title="aiohttp.UnixConnector"><code class="xref py py-class docutils literal"><span class="pre">UnixConnector</span></code></a> is inherited from <a class="reference internal" href="#aiohttp.BaseConnector" title="aiohttp.BaseConnector"><code class="xref py py-class docutils literal"><span class="pre">BaseConnector</span></code></a>.</p>
+<blockquote>
+<div><p>Usage:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = UnixConnector(path=&#39;/path/to/socket&#39;)
+session = ClientSession(connector=conn)
+async with session.get(&#39;http://python.org&#39;) as resp:
+    ...
+</pre></div>
+</div>
+</div></blockquote>
+<p>Constructor accepts all parameters suitable for
+<a class="reference internal" href="#aiohttp.BaseConnector" title="aiohttp.BaseConnector"><code class="xref py py-class docutils literal"><span class="pre">BaseConnector</span></code></a> plus UNIX-specific one:</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>path</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; Unix socket path</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="aiohttp.UnixConnector.path">
+<code class="descname">path</code><a class="headerlink" href="#aiohttp.UnixConnector.path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Path to <em>UNIX socket</em>, read-only <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> property.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="connection">
+<h3>Connection<a class="headerlink" href="#connection" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="aiohttp.Connection">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">Connection</code><a class="headerlink" href="#aiohttp.Connection" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encapsulates single connection in connector object.</p>
+<p>End user should never create <a class="reference internal" href="#aiohttp.Connection" title="aiohttp.Connection"><code class="xref py py-class docutils literal"><span class="pre">Connection</span></code></a> instances manually
+but get it by <a class="reference internal" href="#aiohttp.BaseConnector.connect" title="aiohttp.BaseConnector.connect"><code class="xref py py-meth docutils literal"><span class="pre">BaseConnector.connect()</span></code></a> coroutine.</p>
+<dl class="attribute">
+<dt id="aiohttp.Connection.closed">
+<code class="descname">closed</code><a class="headerlink" href="#aiohttp.Connection.closed" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference external" href="http://docs.python.org/3/library/functions.html#bool" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bool</span></code></a> read-only property, <code class="docutils literal"><span class="pre">True</span></code> if connection was
+closed, released or detached.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.Connection.loop">
+<code class="descname">loop</code><a class="headerlink" href="#aiohttp.Connection.loop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event loop used for connection</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.Connection.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.Connection.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close connection with forcibly closing underlying socket.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.Connection.release">
+<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.Connection.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release connection back to connector.</p>
+<p>Underlying socket is not closed, the connection may be reused
+later if timeout (30 seconds by default) for connection was not
+expired.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.Connection.detach">
+<code class="descname">detach</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.Connection.detach" title="Permalink to this definition">¶</a></dt>
+<dd><p>Detach underlying socket from connection.</p>
+<p>Underlying socket is not closed, next <a class="reference internal" href="#aiohttp.Connection.close" title="aiohttp.Connection.close"><code class="xref py py-meth docutils literal"><span class="pre">close()</span></code></a> or
+<a class="reference internal" href="#aiohttp.Connection.release" title="aiohttp.Connection.release"><code class="xref py py-meth docutils literal"><span class="pre">release()</span></code></a> calls don&#8217;t return socket to free pool.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="response-object">
+<h2>Response object<a class="headerlink" href="#response-object" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="aiohttp.ClientResponse">
+<em class="property">class </em><code class="descclassname">aiohttp.</code><code class="descname">ClientResponse</code><a class="headerlink" href="#aiohttp.ClientResponse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Client response returned be <a class="reference internal" href="#aiohttp.ClientSession.request" title="aiohttp.ClientSession.request"><code class="xref py py-meth docutils literal"><span class="pre">ClientSession.request()</span></code></a> and family.</p>
+<p>User never creates the instance of ClientResponse class but gets it
+from API calls.</p>
+<p><a class="reference internal" href="#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> supports async context manager protocol, e.g.:</p>
+<div class="highlight-python"><div class="highlight"><pre>resp = await client_session.get(url)
+async with resp:
+    assert resp.status == 200
+</pre></div>
+</div>
+<p>After exiting from <code class="docutils literal"><span class="pre">async</span> <span class="pre">with</span></code> block response object will be
+<em>released</em> (see <a class="reference internal" href="#aiohttp.ClientResponse.release" title="aiohttp.ClientResponse.release"><code class="xref py py-meth docutils literal"><span class="pre">release()</span></code></a> coroutine).</p>
+<div class="versionadded">
+<p><span class="versionmodified">New in version 0.18: </span>Support for <code class="docutils literal"><span class="pre">async</span> <span class="pre">with</span></code>.</p>
+</div>
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.version">
+<code class="descname">version</code><a class="headerlink" href="#aiohttp.ClientResponse.version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Response&#8217;s version, <code class="xref py py-class docutils literal"><span class="pre">HttpVersion</span></code> instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.status">
+<code class="descname">status</code><a class="headerlink" href="#aiohttp.ClientResponse.status" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP status code of response (<a class="reference external" href="http://docs.python.org/3/library/functions.html#int" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">int</span></code></a>), e.g. <code class="docutils literal"><span class="pre">200</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.reason">
+<code class="descname">reason</code><a class="headerlink" href="#aiohttp.ClientResponse.reason" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP status reason of response (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a>), e.g. <code class="docutils literal"><span class="pre">&quot;OK&quot;</span></code>.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.connection">
+<code class="descname">connection</code><a class="headerlink" href="#aiohttp.ClientResponse.connection" title="Permalink to this definition">¶</a></dt>
+<dd><p><a class="reference internal" href="#aiohttp.Connection" title="aiohttp.Connection"><code class="xref py py-class docutils literal"><span class="pre">Connection</span></code></a> used for handling response.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.content">
+<code class="descname">content</code><a class="headerlink" href="#aiohttp.ClientResponse.content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Payload stream, contains response&#8217;s BODY (<code class="xref py py-class docutils literal"><span class="pre">StreamReader</span></code>
+compatible instance, most likely
+<code class="xref py py-class docutils literal"><span class="pre">FlowControlStreamReader</span></code> one).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.cookies">
+<code class="descname">cookies</code><a class="headerlink" href="#aiohttp.ClientResponse.cookies" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP cookies of response (<em>Set-Cookie</em> HTTP header,
+<a class="reference external" href="http://docs.python.org/3/library/http.cookies.html#http.cookies.SimpleCookie" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">SimpleCookie</span></code></a>).</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="aiohttp.ClientResponse.headers">
+<code class="descname">headers</code><a class="headerlink" href="#aiohttp.ClientResponse.headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>HTTP headers of response, <a class="reference internal" href="multidict.html#aiohttp.CIMultiDictProxy" title="aiohttp.CIMultiDictProxy"><code class="xref py py-class docutils literal"><span class="pre">CIMultiDictProxy</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientResponse.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientResponse.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close response and underlying connection.</p>
+<p>For <a class="reference internal" href="glossary.html#term-keep-alive"><span class="xref std std-term">keep-alive</span></a> support see <a class="reference internal" href="#aiohttp.ClientResponse.release" title="aiohttp.ClientResponse.release"><code class="xref py py-meth docutils literal"><span class="pre">release()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientResponse.read">
+<em class="property">coroutine </em><code class="descname">read</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientResponse.read" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read the whole response&#8217;s body as <a class="reference external" href="http://docs.python.org/3/library/functions.html#bytes" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">bytes</span></code></a>.</p>
+<p>Close underlying connection if data reading gets an error,
+release connection otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Return bytes:</th><td class="field-body">read <em>BODY</em>.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="#aiohttp.ClientResponse.close" title="aiohttp.ClientResponse.close"><code class="xref py py-meth docutils literal"><span class="pre">close()</span></code></a>, <a class="reference internal" href="#aiohttp.ClientResponse.release" title="aiohttp.ClientResponse.release"><code class="xref py py-meth docutils literal"><span class="pre">release()</span></code></a>.</p>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientResponse.release">
+<em class="property">coroutine </em><code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientResponse.release" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finish response processing, release underlying connection and
+return it into free connection pool for reusage by next upcoming
+request.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientResponse.text">
+<em class="property">coroutine </em><code class="descname">text</code><span class="sig-paren">(</span><em>encoding=None</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientResponse.text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read response&#8217;s body and return decoded <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> using
+specified <em>encoding</em> parameter.</p>
+<p>If <em>encoding</em> is <code class="docutils literal"><span class="pre">None</span></code> content encoding is autocalculated
+using <a class="reference internal" href="glossary.html#term-cchardet"><span class="xref std std-term">cchardet</span></a> or <a class="reference internal" href="glossary.html#term-chardet"><span class="xref std std-term">chardet</span></a> as fallback if
+<em>cchardet</em> is not awailable.</p>
+<p>Close underlying connection if data reading gets an error,
+release connection otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; text encoding used for <em>BODY</em> decoding, or
+<code class="docutils literal"><span class="pre">None</span></code> for encoding autodetection
+(default).</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return str:</th><td class="field-body">decoded <em>BODY</em></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="aiohttp.ClientResponse.json">
+<em class="property">coroutine </em><code class="descname">json</code><span class="sig-paren">(</span><em>encoding=None</em><span class="sig-paren">)</span><a class="headerlink" href="#aiohttp.ClientResponse.json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read response&#8217;s body as <em>JSON</em>, return <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a> using
+specified <em>encoding</em> and <em>loader</em>.</p>
+<p>If <em>encoding</em> is <code class="docutils literal"><span class="pre">None</span></code> content encoding is autocalculated
+using <a class="reference internal" href="glossary.html#term-cchardet"><span class="xref std std-term">cchardet</span></a> or <a class="reference internal" href="glossary.html#term-chardet"><span class="xref std std-term">chardet</span></a> as fallback if
+<em>cchardet</em> is not awailable.</p>
+<p>Close underlying connection if data reading gets an error,
+release connection otherwise.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>encoding</strong> (<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><em>str</em></a>) &#8211; text encoding used for <em>BODY</em> decoding, or
+<code class="docutils literal"><span class="pre">None</span></code> for encoding autodetection
+(default).</li>
+<li><strong>loads</strong> (<a class="reference external" href="http://docs.python.org/3/library/functions.html#callable" title="(in Python v3.5)"><em>callable</em></a>) &#8211; <a class="reference external" href="http://docs.python.org/3/library/functions.html#callable" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">callable()</span></code></a> used for loading <em>JSON</em>
+data, <a class="reference external" href="http://docs.python.org/3/library/json.html#json.loads" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">json.loads()</span></code></a> by default.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return dict:</th><td class="field-body"><p class="first last"><em>BODY</em> as <em>JSON</em> data.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/client_reference";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="client.html">HTTP Client</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">HTTP Client Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#client-session">Client Session</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-api">Basic API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connectors">Connectors</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#baseconnector">BaseConnector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#tcpconnector">TCPConnector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#proxyconnector">ProxyConnector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#unixconnector">UnixConnector</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connection">Connection</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#response-object">Response object</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/client_reference.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>

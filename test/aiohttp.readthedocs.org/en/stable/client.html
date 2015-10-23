@@ -1,0 +1,720 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>HTTP Client &mdash; aiohttp 0.18.2- documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/badge_only.css" type="text/css" />
+    <link rel="stylesheet" href="https://media.readthedocs.org/css/readthedocs-doc-embed.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.18.2-',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/underscore.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/doctools.js"></script>
+    <script type="text/javascript" src="https://media.readthedocs.org/javascript/readthedocs-doc-embed.js"></script>
+    <link rel="shortcut icon" href="_static/aiohttp-icon.ico"/>
+    <link rel="top" title="aiohttp 0.18.2- documentation" href="index.html" />
+    <link rel="next" title="HTTP Client Reference" href="client_reference.html" />
+    <link rel="prev" title="aiohttp" href="index.html" />
+
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+<!-- RTD Extra Head -->
+
+    
+    
+
+<!-- 
+Always link to the latest version, as canonical.
+http://docs.readthedocs.org/en/latest/canonical.html
+-->
+<link rel="canonical" href="http://aiohttp.readthedocs.org/en/stable/client.html" />
+<script type="text/javascript">
+  // This is included here because other places don't have access to the pagename variable.
+  var READTHEDOCS_DATA = {
+    project: "aiohttp",
+    version: "stable",
+    language: "en",
+    page: "client",
+    builder: "sphinx",
+    theme: "alabaster",
+    docroot: "/docs/",
+    
+    source_suffix: ".rst",
+    
+    api_host: "https://readthedocs.org/",
+    commit: "4ae656a9"
+  }
+  // Old variables
+  var doc_version = "stable";
+  var doc_slug = "aiohttp";
+  var page_name = "client";
+  var html_theme = "alabaster";
+</script>
+<!-- RTD Analytics Code -->
+<!-- Included in the header because you don't have a footer block. -->
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17997319-1']);
+  _gaq.push(['_trackPageview']);
+
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+<!-- end RTD Analytics Code -->
+<!-- end RTD <extrahead> -->
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="http-client">
+<span id="aiohttp-client"></span><h1>HTTP Client<a class="headerlink" href="#http-client" title="Permalink to this headline">¶</a></h1>
+<span class="target" id="module-aiohttp"></span><div class="section" id="make-a-request">
+<h2>Make a Request<a class="headerlink" href="#make-a-request" title="Permalink to this headline">¶</a></h2>
+<p>Begin by importing the aiohttp module:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">aiohttp</span>
+</pre></div>
+</div>
+<p>Now, let&#8217;s try to get a web-page. For example let&#8217;s get GitHub&#8217;s public
+time-line</p>
+<div class="highlight-python"><div class="highlight"><pre>r = await aiohttp.get(&#39;https://api.github.com/events&#39;)
+</pre></div>
+</div>
+<p>Now, we have a <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse" title="aiohttp.ClientResponse"><code class="xref py py-class docutils literal"><span class="pre">ClientResponse</span></code></a> object called <code class="docutils literal"><span class="pre">r</span></code>. We can get all the
+information we need from this object.
+The mandatory parameter of <a class="reference internal" href="client_reference.html#aiohttp.get" title="aiohttp.get"><code class="xref py py-func docutils literal"><span class="pre">get()</span></code></a> coroutine is an HTTP url.</p>
+<p>In order to make an HTTP POST request use <a class="reference internal" href="client_reference.html#aiohttp.post" title="aiohttp.post"><code class="xref py py-func docutils literal"><span class="pre">post()</span></code></a> coroutine:</p>
+<div class="highlight-python"><div class="highlight"><pre>r = await aiohttp.post(&#39;http://httpbin.org/post&#39;, data=b&#39;data&#39;)
+</pre></div>
+</div>
+<p>Other HTTP methods are available as well:</p>
+<div class="highlight-python"><div class="highlight"><pre>r = await aiohttp.put(&#39;http://httpbin.org/put&#39;, data=b&#39;data&#39;)
+r = await aiohttp.delete(&#39;http://httpbin.org/delete&#39;)
+r = await aiohttp.head(&#39;http://httpbin.org/get&#39;)
+r = await aiohttp.options(&#39;http://httpbin.org/get&#39;)
+r = await aiohttp.patch(&#39;http://httpbin.org/patch&#39;, data=b&#39;data&#39;)
+</pre></div>
+</div>
+</div>
+<div class="section" id="passing-parameters-in-urls">
+<h2>Passing Parameters In URLs<a class="headerlink" href="#passing-parameters-in-urls" title="Permalink to this headline">¶</a></h2>
+<p>You often want to send some sort of data in the URL&#8217;s query string. If
+you were constructing the URL by hand, this data would be given as key/value
+pairs in the URL after a question mark, e.g. <code class="docutils literal"><span class="pre">httpbin.org/get?key=val</span></code>.
+Requests allows you to provide these arguments as a dictionary, using the
+<code class="docutils literal"><span class="pre">params</span></code> keyword argument. As an example, if you wanted to pass
+<code class="docutils literal"><span class="pre">key1=value1</span></code> and <code class="docutils literal"><span class="pre">key2=value2</span></code> to <code class="docutils literal"><span class="pre">httpbin.org/get</span></code>, you would use the
+following code:</p>
+<div class="highlight-python"><div class="highlight"><pre>payload = {&#39;key1&#39;: &#39;value1&#39;, &#39;key2&#39;: &#39;value2&#39;}
+async with aiohttp.get(&#39;http://httpbin.org/get&#39;,
+                       params=payload) as r:
+    assert r.url == &#39;http://httpbin.org/get?key2=value2&amp;key1=value1&#39;
+</pre></div>
+</div>
+<p>You can see that the URL has been correctly encoded by printing the URL.</p>
+<p>It is also possible to pass a list of 2 item tuples as parameters, in
+that case you can specify multiple values for each key:</p>
+<div class="highlight-python"><div class="highlight"><pre>payload = [(&#39;key&#39;, &#39;value1&#39;), (&#39;key&#39;: &#39;value2&#39;)]
+async with aiohttp.get(&#39;http://httpbin.org/get&#39;,
+                       params=payload) as r:
+    assert r.url == &#39;http://httpbin.org/get?key=value2&amp;key=value1&#39;
+</pre></div>
+</div>
+</div>
+<div class="section" id="response-content">
+<h2>Response Content<a class="headerlink" href="#response-content" title="Permalink to this headline">¶</a></h2>
+<p>We can read the content of the server&#8217;s response. Consider the GitHub time-line
+again:</p>
+<div class="highlight-python"><div class="highlight"><pre>r = await aiohttp.get(&#39;https://api.github.com/events&#39;)
+print(await r.text())
+</pre></div>
+</div>
+<p>will printout socmething like:</p>
+<div class="highlight-python"><div class="highlight"><pre>&#39;[{&quot;created_at&quot;:&quot;2015-06-12T14:06:22Z&quot;,&quot;public&quot;:true,&quot;actor&quot;:{...
+</pre></div>
+</div>
+<p><code class="docutils literal"><span class="pre">aiohttp</span></code> will automatically decode the content from the server. You can
+specify custom encoding for the <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.text" title="aiohttp.ClientResponse.text"><code class="xref py py-meth docutils literal"><span class="pre">text()</span></code></a> method:</p>
+<div class="highlight-python"><div class="highlight"><pre>await r.text(encoding=&#39;windows-1251&#39;)
+</pre></div>
+</div>
+</div>
+<div class="section" id="binary-response-content">
+<h2>Binary Response Content<a class="headerlink" href="#binary-response-content" title="Permalink to this headline">¶</a></h2>
+<p>You can also access the response body as bytes, for non-text requests:</p>
+<div class="highlight-python"><div class="highlight"><pre>print(await r.read())
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>b&#39;[{&quot;created_at&quot;:&quot;2015-06-12T14:06:22Z&quot;,&quot;public&quot;:true,&quot;actor&quot;:{...
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">gzip</span></code> and <code class="docutils literal"><span class="pre">deflate</span></code> transfer-encodings are automatically
+decoded for you.</p>
+</div>
+<div class="section" id="json-response-content">
+<h2>JSON Response Content<a class="headerlink" href="#json-response-content" title="Permalink to this headline">¶</a></h2>
+<p>There&#8217;s also a built-in JSON decoder, in case you&#8217;re dealing with JSON data:</p>
+<div class="highlight-python"><div class="highlight"><pre>async with aiohttp.get(&#39;https://api.github.com/events&#39;) as r:
+    print(await r.json())
+</pre></div>
+</div>
+<p>In case that JSON decoding fails, <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.json" title="aiohttp.ClientResponse.json"><code class="xref py py-meth docutils literal"><span class="pre">json()</span></code></a> will
+raise an exception. It is possible to specify custom encoding and
+decoder functions for the <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.json" title="aiohttp.ClientResponse.json"><code class="xref py py-meth docutils literal"><span class="pre">json()</span></code></a> call.</p>
+</div>
+<div class="section" id="streaming-response-content">
+<h2>Streaming Response Content<a class="headerlink" href="#streaming-response-content" title="Permalink to this headline">¶</a></h2>
+<p>While methods <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.read" title="aiohttp.ClientResponse.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>,
+<a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.json" title="aiohttp.ClientResponse.json"><code class="xref py py-meth docutils literal"><span class="pre">json()</span></code></a> and <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.text" title="aiohttp.ClientResponse.text"><code class="xref py py-meth docutils literal"><span class="pre">text()</span></code></a> are very
+convenient you should use them carefully. All these methods load the
+whole response in memory.  For example if you want to download several
+gigabyte sized files, these methods will load all the data in
+memory. Instead you can use the <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.content" title="aiohttp.ClientResponse.content"><code class="xref py py-attr docutils literal"><span class="pre">content</span></code></a>
+attribute. It is an instance of the <code class="docutils literal"><span class="pre">aiohttp.StreamReader</span></code>
+class. The <code class="docutils literal"><span class="pre">gzip</span></code> and <code class="docutils literal"><span class="pre">deflate</span></code> transfer-encodings are
+automatically decoded for you:</p>
+<div class="highlight-python"><div class="highlight"><pre>async with aiohttp.get(&#39;https://api.github.com/events&#39;) as r:
+    await r.content.read(10)
+</pre></div>
+</div>
+<p>In general, however, you should use a pattern like this to save what is being
+streamed to a file:</p>
+<div class="highlight-python"><div class="highlight"><pre>with open(filename, &#39;wb&#39;) as fd:
+    while True:
+        chunk = await r.content.read(chunk_size)
+        if not chunk:
+            break
+        fd.write(chunk)
+</pre></div>
+</div>
+<p>It is not possible to use <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.read" title="aiohttp.ClientResponse.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>,
+<a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.json" title="aiohttp.ClientResponse.json"><code class="xref py py-meth docutils literal"><span class="pre">json()</span></code></a> and <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.text" title="aiohttp.ClientResponse.text"><code class="xref py py-meth docutils literal"><span class="pre">text()</span></code></a> after
+explicit reading from <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.content" title="aiohttp.ClientResponse.content"><code class="xref py py-attr docutils literal"><span class="pre">content</span></code></a>.</p>
+</div>
+<div class="section" id="releasing-response">
+<h2>Releasing Response<a class="headerlink" href="#releasing-response" title="Permalink to this headline">¶</a></h2>
+<p>Don&#8217;t forget to release response after use. This will ensure explicit
+behavior and proper connection pooling.</p>
+<p>The easiest way to correctly response releasing is <code class="docutils literal"><span class="pre">async</span> <span class="pre">with</span></code> statement:</p>
+<div class="highlight-python"><div class="highlight"><pre>async with client.get(url) as resp:
+    pass
+</pre></div>
+</div>
+<p>But explicit <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.release" title="aiohttp.ClientResponse.release"><code class="xref py py-meth docutils literal"><span class="pre">release()</span></code></a> call also may be used:</p>
+<div class="highlight-python"><div class="highlight"><pre>await r.release()
+</pre></div>
+</div>
+<p>But it&#8217;s not necessary if you use <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.read" title="aiohttp.ClientResponse.read"><code class="xref py py-meth docutils literal"><span class="pre">read()</span></code></a>,
+<a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.json" title="aiohttp.ClientResponse.json"><code class="xref py py-meth docutils literal"><span class="pre">json()</span></code></a> and <a class="reference internal" href="client_reference.html#aiohttp.ClientResponse.text" title="aiohttp.ClientResponse.text"><code class="xref py py-meth docutils literal"><span class="pre">text()</span></code></a> methods.
+They do release connection internally but better don&#8217;t rely on that
+behavior.</p>
+</div>
+<div class="section" id="custom-headers">
+<h2>Custom Headers<a class="headerlink" href="#custom-headers" title="Permalink to this headline">¶</a></h2>
+<p>If you need to add HTTP headers to a request, pass them in a
+<a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a> to the <em>headers</em> parameter.</p>
+<p>For example, if you want to specify the content-type for the previous
+example:</p>
+<div class="highlight-python"><div class="highlight"><pre>import json
+url = &#39;https://api.github.com/some/endpoint&#39;
+payload = {&#39;some&#39;: &#39;data&#39;}
+headers = {&#39;content-type&#39;: &#39;application/json&#39;}
+
+await aiohttp.post(url,
+                   data=json.dumps(payload),
+                   headers=headers)
+</pre></div>
+</div>
+</div>
+<div class="section" id="custom-cookies">
+<h2>Custom Cookies<a class="headerlink" href="#custom-cookies" title="Permalink to this headline">¶</a></h2>
+<p>To send your own cookies to the server, you can use the <em>cookies</em>
+parameter:</p>
+<div class="highlight-python"><div class="highlight"><pre>url = &#39;http://httpbin.org/cookies&#39;
+cookies = dict(cookies_are=&#39;working&#39;)
+
+async with aiohttp.get(url, cookies=cookies) as r:
+    assert await r.json() == {&quot;cookies&quot;: {&quot;cookies_are&quot;: &quot;working&quot;}}
+</pre></div>
+</div>
+</div>
+<div class="section" id="more-complicated-post-requests">
+<h2>More complicated POST requests<a class="headerlink" href="#more-complicated-post-requests" title="Permalink to this headline">¶</a></h2>
+<p>Typically, you want to send some form-encoded data — much like an HTML form.
+To do this, simply pass a dictionary to the <em>data</em> argument. Your
+dictionary of data will automatically be form-encoded when the request is made:</p>
+<div class="highlight-python"><div class="highlight"><pre>payload = {&#39;key1&#39;: &#39;value1&#39;, &#39;key2&#39;: &#39;value2&#39;}
+async with aiohttp.post(&#39;http://httpbin.org/post&#39;,
+                        data=payload) as r:
+    print(await r.text())
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre>{
+  ...
+  &quot;form&quot;: {
+    &quot;key2&quot;: &quot;value2&quot;,
+    &quot;key1&quot;: &quot;value1&quot;
+  },
+  ...
+}
+</pre></div>
+</div>
+<p>If you want to send data that is not form-encoded you can do it by
+passing a <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">str</span></code></a> instead of a <a class="reference external" href="http://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">dict</span></code></a>. This data will be
+posted directly.</p>
+<p>For example, the GitHub API v3 accepts JSON-Encoded POST/PATCH data:</p>
+<div class="highlight-python"><div class="highlight"><pre>import json
+url = &#39;https://api.github.com/some/endpoint&#39;
+payload = {&#39;some&#39;: &#39;data&#39;}
+
+r = await aiohttp.post(url, data=json.dumps(payload))
+</pre></div>
+</div>
+</div>
+<div class="section" id="post-a-multipart-encoded-file">
+<h2>POST a Multipart-Encoded File<a class="headerlink" href="#post-a-multipart-encoded-file" title="Permalink to this headline">¶</a></h2>
+<p>To upload Multipart-encoded files:</p>
+<div class="highlight-python"><div class="highlight"><pre>url = &#39;http://httpbin.org/post&#39;
+files = {&#39;file&#39;: open(&#39;report.xls&#39;, &#39;rb&#39;)}
+
+await aiohttp.post(url, data=files)
+</pre></div>
+</div>
+<p>You can set the filename, content_type explicitly:</p>
+<div class="highlight-python"><div class="highlight"><pre>url = &#39;http://httpbin.org/post&#39;
+data = FormData()
+data.add_field(&#39;file&#39;,
+               open(&#39;report.xls&#39;, &#39;rb&#39;),
+               filename=&#39;report.xls&#39;,
+               content_type=&#39;application/vnd.ms-excel&#39;)
+
+await aiohttp.post(url, data=data)
+</pre></div>
+</div>
+<p>If you pass a file object as data parameter, aiohttp will stream it to
+the server automatically. Check <a class="reference internal" href="api.html#aiohttp.streams.StreamReader" title="aiohttp.streams.StreamReader"><code class="xref py py-class docutils literal"><span class="pre">StreamReader</span></code></a>
+for supported format information.</p>
+<div class="admonition seealso">
+<p class="first admonition-title">See also</p>
+<p class="last"><a class="reference internal" href="multipart.html#aiohttp-multipart"><span>Working with Multipart</span></a></p>
+</div>
+</div>
+<div class="section" id="streaming-uploads">
+<h2>Streaming uploads<a class="headerlink" href="#streaming-uploads" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="multidict.html#module-aiohttp" title="aiohttp"><code class="xref py py-mod docutils literal"><span class="pre">aiohttp</span></code></a> supports multiple types of streaming uploads, which allows you to
+send large files without reading them into memory.</p>
+<p>As a simple case, simply provide a file-like object for your body:</p>
+<div class="highlight-python"><div class="highlight"><pre>with open(&#39;massive-body&#39;, &#39;rb&#39;) as f:
+   await aiohttp.post(&#39;http://some.url/streamed&#39;, data=f)
+</pre></div>
+</div>
+<p>Or you can provide an <a class="reference external" href="http://docs.python.org/3/library/asyncio-task.html#coroutine" title="(in Python v3.5)"><span class="xref std std-ref">coroutine</span></a> that yields bytes objects:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="nd">@asyncio.coroutine</span>
+<span class="k">def</span> <span class="nf">my_coroutine</span><span class="p">():</span>
+   <span class="n">chunk</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">read_some_data_from_somewhere</span><span class="p">()</span>
+   <span class="k">if</span> <span class="ow">not</span> <span class="n">chunk</span><span class="p">:</span>
+      <span class="k">return</span>
+   <span class="k">yield</span> <span class="n">chunk</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last"><code class="docutils literal"><span class="pre">yield</span></code> expression is forbidden inside <code class="docutils literal"><span class="pre">async</span> <span class="pre">def</span></code>.</p>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">It is not a standard <a class="reference external" href="http://docs.python.org/3/library/asyncio-task.html#coroutine" title="(in Python v3.5)"><span class="xref std std-ref">coroutine</span></a> as it yields values so it
+can not be used like <code class="docutils literal"><span class="pre">yield</span> <span class="pre">from</span> <span class="pre">my_coroutine()</span></code>.
+<a class="reference internal" href="multidict.html#module-aiohttp" title="aiohttp"><code class="xref py py-mod docutils literal"><span class="pre">aiohttp</span></code></a> internally handles such coroutines.</p>
+</div>
+<p>Also it is possible to use a <a class="reference internal" href="api.html#aiohttp.streams.StreamReader" title="aiohttp.streams.StreamReader"><code class="xref py py-class docutils literal"><span class="pre">StreamReader</span></code></a>
+object. Lets say we want to upload a file from another request and
+calculate the file SHA1 hash:</p>
+<div class="highlight-python"><div class="highlight"><pre>async def feed_stream(resp, stream):
+    h = hashlib.sha256()
+
+    while True:
+        chunk = await resp.content.readany()
+        if not chunk:
+            break
+        h.update(chunk)
+        s.feed_data(chunk)
+
+    return h.hexdigest()
+
+resp = aiohttp.get(&#39;http://httpbin.org/post&#39;)
+stream = StreamReader()
+loop.create_task(aiohttp.post(&#39;http://httpbin.org/post&#39;, data=stream))
+
+file_hash = await feed_stream(resp, stream)
+</pre></div>
+</div>
+<p>Because the response content attribute is a
+<a class="reference internal" href="api.html#aiohttp.streams.StreamReader" title="aiohttp.streams.StreamReader"><code class="xref py py-class docutils literal"><span class="pre">StreamReader</span></code></a>, you can chain get and post
+requests together (aka HTTP pipelining):</p>
+<div class="highlight-python"><div class="highlight"><pre>r = await aiohttp.request(&#39;get&#39;, &#39;http://python.org&#39;)
+await aiohttp.post(&#39;http://httpbin.org/post&#39;,
+                   data=r.content)
+</pre></div>
+</div>
+</div>
+<div class="section" id="keep-alive-connection-pooling-and-cookie-sharing">
+<span id="aiohttp-client-session"></span><h2>Keep-Alive, connection pooling and cookie sharing<a class="headerlink" href="#keep-alive-connection-pooling-and-cookie-sharing" title="Permalink to this headline">¶</a></h2>
+<p>To share cookies between multiple requests you can create an
+<code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code> object:</p>
+<div class="highlight-python"><div class="highlight"><pre>session = aiohttp.ClientSession()
+await session.post(
+     &#39;http://httpbin.org/cookies/set/my_cookie/my_value&#39;)
+async with session.get(&#39;http://httpbin.org/cookies&#39;) as r:
+    json = await r.json()
+    assert json[&#39;cookies&#39;][&#39;my_cookie&#39;] == &#39;my_value&#39;
+</pre></div>
+</div>
+<p>You also can set default headers for all session requests:</p>
+<div class="highlight-python"><div class="highlight"><pre>session = aiohttp.ClientSession(
+    headers={&quot;Authorization&quot;: &quot;Basic bG9naW46cGFzcw==&quot;})
+async with s.get(&quot;http://httpbin.org/headers&quot;) as r:
+    json = yield from r.json()
+    assert json[&#39;headers&#39;][&#39;Authorization&#39;] == &#39;Basic bG9naW46cGFzcw==&#39;
+</pre></div>
+</div>
+<p>By default aiohttp does not use connection pooling. In other words
+multiple calls to <code class="xref py py-func docutils literal"><span class="pre">request()</span></code> will start a new
+connection to host each.  <code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code>
+object will do connection pooling for you.</p>
+</div>
+<div class="section" id="connectors">
+<h2>Connectors<a class="headerlink" href="#connectors" title="Permalink to this headline">¶</a></h2>
+<p>To tweak or change <em>transport</em> layer of requests you can pass a custom
+<strong>Connector</strong> to <a class="reference internal" href="client_reference.html#aiohttp.request" title="aiohttp.request"><code class="xref py py-func docutils literal"><span class="pre">aiohttp.request()</span></code></a> and family. For example:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.TCPConnector()
+r = await aiohttp.get(&#39;http://python.org&#39;, connector=conn)
+</pre></div>
+</div>
+<p><a class="reference internal" href="client_reference.html#aiohttp.ClientSession" title="aiohttp.ClientSession"><code class="xref py py-class docutils literal"><span class="pre">ClientSession</span></code></a> constructor also accepts <em>connector</em> instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">session</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientSession</span><span class="p">(</span><span class="n">connector</span><span class="o">=</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">TCPConnector</span><span class="p">())</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="limiting-connection-pool-size">
+<h2>Limiting connection pool size<a class="headerlink" href="#limiting-connection-pool-size" title="Permalink to this headline">¶</a></h2>
+<p>To limit amount of simultaneously opened connection to the same
+endpoint (<code class="docutils literal"><span class="pre">(host,</span> <span class="pre">port,</span> <span class="pre">is_ssl)</span></code> triple) you can pass <em>limit</em>
+parameter to <strong>connector</strong>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">conn</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">TCPConnector</span><span class="p">(</span><span class="n">limit</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The example limits amount of parallel connections to <cite>30</cite>.</p>
+</div>
+<div class="section" id="ssl-control-for-tcp-sockets">
+<h2>SSL control for TCP sockets<a class="headerlink" href="#ssl-control-for-tcp-sockets" title="Permalink to this headline">¶</a></h2>
+<p><code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.TCPConnector</span></code> constructor accepts mutually
+exclusive <em>verify_ssl</em> and <em>ssl_context</em> params.</p>
+<p>By default it uses strict checks for HTTPS protocol. Certification
+checks can be relaxed by passing <code class="docutils literal"><span class="pre">verify_ssl=False</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.TCPConnector(verify_ssl=False)
+session = aiohttp.ClientSession(connector=conn)
+r = await session.get(&#39;https://example.com&#39;)
+</pre></div>
+</div>
+<p>If you need to setup custom ssl parameters (use own certification
+files for example) you can create a <a class="reference external" href="http://docs.python.org/3/library/ssl.html#ssl.SSLContext" title="(in Python v3.5)"><code class="xref py py-class docutils literal"><span class="pre">ssl.SSLContext</span></code></a> instance and
+pass it into the connector:</p>
+<div class="highlight-python"><div class="highlight"><pre>sslcontext = ssl.create_default_context(cafile=&#39;/path/to/ca-bundle.crt&#39;)
+conn = aiohttp.TCPConnector(ssl_context=sslcontext)
+session = aiohttp.ClientSession(connector=conn)
+r = await session.get(&#39;https://example.com&#39;)
+</pre></div>
+</div>
+<p>You may also verify certificates via MD5, SHA1, or SHA256 fingerprint:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Attempt to connect to https://www.python.org</span>
+<span class="c"># with a pin to a bogus certificate:</span>
+<span class="n">bad_md5</span> <span class="o">=</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\xa2\x06</span><span class="s">G</span><span class="se">\xad\xaa\xf5\xd8\\</span><span class="s">J</span><span class="se">\x99</span><span class="s">^by;</span><span class="se">\x06</span><span class="s">=&#39;</span>
+<span class="n">conn</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">TCPConnector</span><span class="p">(</span><span class="n">fingerprint</span><span class="o">=</span><span class="n">bad_md5</span><span class="p">)</span>
+<span class="n">session</span> <span class="o">=</span> <span class="n">aiohttp</span><span class="o">.</span><span class="n">ClientSession</span><span class="p">(</span><span class="n">connector</span><span class="o">=</span><span class="n">conn</span><span class="p">)</span>
+<span class="n">exc</span> <span class="o">=</span> <span class="bp">None</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="k">yield from</span> <span class="n">session</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;https://www.python.org&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">FingerprintMismatch</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="n">exc</span> <span class="o">=</span> <span class="n">e</span>
+<span class="k">assert</span> <span class="n">exc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span>
+<span class="k">assert</span> <span class="n">exc</span><span class="o">.</span><span class="n">expected</span> <span class="o">==</span> <span class="n">bad_md5</span>
+
+<span class="c"># www.python.org cert&#39;s actual md5</span>
+<span class="k">assert</span> <span class="n">exc</span><span class="o">.</span><span class="n">got</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\xca</span><span class="s">;I</span><span class="se">\x9c</span><span class="s">uv</span><span class="se">\x8e</span><span class="s">s</span><span class="se">\x13</span><span class="s">8N$?</span><span class="se">\x15\xca\xcb</span><span class="s">&#39;</span>
+</pre></div>
+</div>
+<p>Note that this is the fingerprint of the DER-encoded certificate.
+If you have the certificate in PEM format, you can convert it to
+DER with e.g. <code class="docutils literal"><span class="pre">openssl</span> <span class="pre">x509</span> <span class="pre">-in</span> <span class="pre">crt.pem</span> <span class="pre">-inform</span> <span class="pre">PEM</span> <span class="pre">-outform</span> <span class="pre">DER</span> <span class="pre">&gt;</span> <span class="pre">crt.der</span></code>.</p>
+<p>Tip: to convert from a hexadecimal digest to a binary byte-string, you can use
+<code class="xref py py-attr docutils literal"><span class="pre">binascii.unhexlify</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">md5_hex</span> <span class="o">=</span> <span class="s">&#39;ca3b499c75768e7313384e243f15cacb&#39;</span>
+<span class="kn">from</span> <span class="nn">binascii</span> <span class="kn">import</span> <span class="n">unhexlify</span>
+<span class="k">assert</span> <span class="n">unhexlify</span><span class="p">(</span><span class="n">md5_hex</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;</span><span class="se">\xca</span><span class="s">;I</span><span class="se">\x9c</span><span class="s">uv</span><span class="se">\x8e</span><span class="s">s</span><span class="se">\x13</span><span class="s">8N$?</span><span class="se">\x15\xca\xcb</span><span class="s">&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="unix-domain-sockets">
+<h2>Unix domain sockets<a class="headerlink" href="#unix-domain-sockets" title="Permalink to this headline">¶</a></h2>
+<p>If your HTTP server uses UNIX domain sockets you can use
+<code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.UnixConnector</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.UnixConnector(path=&#39;/path/to/socket&#39;)
+r = await aiohttp.get(&#39;http://python.org&#39;, connector=conn)
+</pre></div>
+</div>
+</div>
+<div class="section" id="proxy-support">
+<h2>Proxy support<a class="headerlink" href="#proxy-support" title="Permalink to this headline">¶</a></h2>
+<p>aiohttp supports proxy. You have to use
+<code class="xref py py-class docutils literal"><span class="pre">aiohttp.connector.ProxyConnector</span></code>:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.ProxyConnector(proxy=&quot;http://some.proxy.com&quot;)
+r = await aiohttp.get(&#39;http://python.org&#39;,
+                      connector=conn)
+</pre></div>
+</div>
+<p><code class="xref py py-class docutils literal"><span class="pre">ProxyConnector</span></code> also supports proxy authorization:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.ProxyConnector(
+   proxy=&quot;http://some.proxy.com&quot;,
+   proxy_auth=aiohttp.BasicAuth(&#39;user&#39;, &#39;pass&#39;))
+session = aiottp.ClientSession(connector=conn)
+async with session.get(&#39;http://python.org&#39;) as r:
+    assert r.status == 200
+</pre></div>
+</div>
+<p>Authentication credentials can be passed in proxy URL:</p>
+<div class="highlight-python"><div class="highlight"><pre>conn = aiohttp.ProxyConnector(
+    proxy=&quot;http://user:pass@some.proxy.com&quot;)
+session = aiottp.ClientSession(connector=conn)
+async with session.get(&#39;http://python.org&#39;) as r:
+    assert r.status == 200
+</pre></div>
+</div>
+</div>
+<div class="section" id="response-status-codes">
+<h2>Response Status Codes<a class="headerlink" href="#response-status-codes" title="Permalink to this headline">¶</a></h2>
+<p>We can check the response status code:</p>
+<div class="highlight-python"><div class="highlight"><pre>async with aiohttp.get(&#39;http://httpbin.org/get&#39;) as r:
+    assert r.status == 200
+</pre></div>
+</div>
+</div>
+<div class="section" id="response-headers">
+<h2>Response Headers<a class="headerlink" href="#response-headers" title="Permalink to this headline">¶</a></h2>
+<p>We can view the server&#8217;s response headers using a multidict:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">headers</span>
+<span class="go">{&#39;ACCESS-CONTROL-ALLOW-ORIGIN&#39;: &#39;*&#39;,</span>
+<span class="go"> &#39;CONTENT-TYPE&#39;: &#39;application/json&#39;,</span>
+<span class="go"> &#39;DATE&#39;: &#39;Tue, 15 Jul 2014 16:49:51 GMT&#39;,</span>
+<span class="go"> &#39;SERVER&#39;: &#39;gunicorn/18.0&#39;,</span>
+<span class="go"> &#39;CONTENT-LENGTH&#39;: &#39;331&#39;,</span>
+<span class="go"> &#39;CONNECTION&#39;: &#39;keep-alive&#39;}</span>
+</pre></div>
+</div>
+<p>The dictionary is special, though: it&#8217;s made just for HTTP
+headers. According to <a class="reference external" href="http://tools.ietf.org/html/rfc7230#section-3.2">RFC 7230</a>, HTTP Header names
+are case-insensitive. It also supports multiple values for the same
+key as HTTP protocol does.</p>
+<p>So, we can access the headers using any capitalization we want:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">&#39;Content-Type&#39;</span><span class="p">]</span>
+<span class="go">&#39;application/json&#39;</span>
+
+<span class="gp">&gt;&gt;&gt; </span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;content-type&#39;</span><span class="p">)</span>
+<span class="go">&#39;application/json&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="response-cookies">
+<h2>Response Cookies<a class="headerlink" href="#response-cookies" title="Permalink to this headline">¶</a></h2>
+<p>If a response contains some Cookies, you can quickly access them:</p>
+<div class="highlight-python"><div class="highlight"><pre>url = &#39;http://example.com/some/cookie/setting/url&#39;
+async with aiohttp.get(url) as r:
+    print(r.cookies[&#39;example_cookie_name&#39;])
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Response cookies contain only values, that were in <code class="docutils literal"><span class="pre">Set-Cookie</span></code> headers
+of the <strong>last</strong> request in redirection chain. To gather cookies between all
+redirection requests you can use <a class="reference internal" href="#aiohttp-client-session"><span>aiohttp.ClientSession</span></a> object.</p>
+</div>
+</div>
+<div class="section" id="timeouts">
+<h2>Timeouts<a class="headerlink" href="#timeouts" title="Permalink to this headline">¶</a></h2>
+<p>You should use <a class="reference external" href="http://docs.python.org/3/library/asyncio-task.html#asyncio.wait_for" title="(in Python v3.5)"><code class="xref py py-func docutils literal"><span class="pre">asyncio.wait_for()</span></code></a> coroutine if you want to limit
+time to wait for a response from a server:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span><span class="n">aiohttp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;http://github.com&#39;</span><span class="p">),</span>
+<span class="gp">... </span>                            <span class="mf">0.001</span><span class="p">)</span>
+<span class="go">Traceback (most recent call last)\:</span>
+<span class="go">  File &quot;&lt;stdin&gt;&quot;, line 1, in &lt;module&gt;</span>
+<span class="go">asyncio.TimeoutError()</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last"><em>timeout</em> is not a time limit on the entire response download;
+rather, an exception is raised if the server has not issued a
+response for <em>timeout</em> seconds (more precisely, if no bytes have been
+received on the underlying socket for <em>timeout</em> seconds).</p>
+</div>
+<div class="feed-disqus">
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+var disqus_shortname = "aiohttp";
+var disqus_identifier = "/client";
+var disqus_developer = "1";
+
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+</div></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<p class="logo">
+  <a href="index.html">
+    <img class="logo" src="_static/aiohttp-icon-128x128.png" alt="Logo"/>
+    
+  </a>
+</p>
+
+
+
+<p class="blurb">http client/server for asyncio</p>
+
+
+
+<p>
+<iframe src="https://ghbtns.com/github-btn.html?user=KeepSafe&repo=aiohttp&type=watch&count=true&size=large"
+  allowtransparency="true" frameborder="0" scrolling="0" width="200px" height="35px"></iframe>
+</p>
+
+
+
+
+    
+
+<p>
+<a href="https://travis-ci.org/KeepSafe/aiohttp">
+    <img
+        alt="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+        src="https://secure.travis-ci.org/KeepSafe/aiohttp.png?branch=master"
+    >
+</a>
+</p>
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="">HTTP Client</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#make-a-request">Make a Request</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#passing-parameters-in-urls">Passing Parameters In URLs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#response-content">Response Content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#binary-response-content">Binary Response Content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#json-response-content">JSON Response Content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#streaming-response-content">Streaming Response Content</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#releasing-response">Releasing Response</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-headers">Custom Headers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-cookies">Custom Cookies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#more-complicated-post-requests">More complicated POST requests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#post-a-multipart-encoded-file">POST a Multipart-Encoded File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#streaming-uploads">Streaming uploads</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#keep-alive-connection-pooling-and-cookie-sharing">Keep-Alive, connection pooling and cookie sharing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#connectors">Connectors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#limiting-connection-pool-size">Limiting connection pool size</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ssl-control-for-tcp-sockets">SSL control for TCP sockets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#unix-domain-sockets">Unix domain sockets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#proxy-support">Proxy support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#response-status-codes">Response Status Codes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#response-headers">Response Headers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#response-cookies">Response Cookies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#timeouts">Timeouts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="client_reference.html">HTTP Client Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="client_websockets.html">WebSockets Client</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web.html">HTTP Server Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="web_reference.html">HTTP Server Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="server.html">Low-level HTTP Server</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multidict.html">Multidicts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="multipart.html">Working with Multipart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Helpers API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gunicorn.html">Deployment using Gunicorn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changes.html">CHANGES</a></li>
+<li class="toctree-l1"><a class="reference internal" href="glossary.html">Glossary</a></li>
+</ul>
+
+
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2013, 2014, 2015, KeepSafe.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/client.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+    <a href="https://github.com/KeepSafe/aiohttp" class="github">
+        <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub"  class="github"/>
+    </a>
+    
+
+    
+  </body>
+</html>
