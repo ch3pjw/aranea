@@ -12,6 +12,8 @@ def get_page(client, url):
     if response.status == 200:
         return (yield from response.read())
     else:
+        # FIXME: in production code this would handle redirects and raise
+        # suitable exceptions:
         raise ValueError('need to handle bad responses, redirects...')
 
 
