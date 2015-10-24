@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from collections import namedtuple
 from urllib.parse import urlparse
 
 import aiohttp
@@ -9,8 +8,6 @@ from bs4 import BeautifulSoup
 from link_extraction import extract_links
 
 log = logging.getLogger()
-
-Page = namedtuple('Page', ('url', 'page_links', 'resources'))
 
 
 class Page:
@@ -34,17 +31,6 @@ class Page:
     @property
     def resource_links(self):
         return filter(lambda l: l.is_resource(), self._links)
-
-
-def partition(predicate, iterable):
-    a = []
-    b = []
-    for item in iterable:
-        if predicate(item):
-            a.append(item)
-        else:
-            b.append(item)
-    return tuple(a), tuple(b)
 
 
 @asyncio.coroutine
