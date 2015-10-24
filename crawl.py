@@ -1,9 +1,10 @@
+#! /usr/bin/env python
 import asyncio
 import logging
 
 import aiohttp
 
-from crawler import crawl
+from aranea.crawler import crawl
 
 log = logging.getLogger()
 
