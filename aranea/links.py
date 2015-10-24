@@ -16,8 +16,7 @@ class Link:
     # A list of <link> tag 'rel' attributes that count as resources,
     # c.f. hyperlinks to other documents. Seeg
     # http://www.w3schools.com/tags/att_link_rel.asp:
-    _resource_rel_values = frozenset((
-        'author', 'icon', 'prefetch', 'stylesheet'))
+    _resource_rel_values = frozenset(('icon', 'prefetch', 'stylesheet'))
 
     def __init__(self, type_, url, rel):
         self.tag_type = type_
@@ -29,8 +28,10 @@ class Link:
         return urlunparse(self.url)
 
     def is_resource(self):
-        return (
-            self.tag_type != 'a' and self.rel not in self._resource_rel_values)
+        if self.tag_type == 'link':
+            return self.rel in self._resource_rel_values
+        else:
+            return self.tag_type != 'a'
 
     def is_internal(self, domain, base_url):
         'Whether this Link refers to a page in our target domain'
@@ -39,9 +40,6 @@ class Link:
 
 
 def extract_links(soup):
-    # base = soup.find('base')
-    # if base:
-    #     base_url = base['href']
     for tag_type, link_attribute_name in Link.types.items():
         for tag in soup.find_all(tag_type):
             try:
