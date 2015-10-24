@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from pages import make_page
+from soup import make_page
 
 log = logging.getLogger(__file__)
 

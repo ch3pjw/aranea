@@ -1,8 +1,4 @@
-import logging
-
 from urllib.parse import urlparse, urlunparse, urljoin
-
-log = logging.getLogger()
 
 
 class Link:
@@ -37,14 +33,3 @@ class Link:
         'Whether this Link refers to a page in our target domain'
         resolved = urlparse(urljoin(base_url, urlunparse(self.url)))
         return resolved.netloc == domain
-
-
-def extract_links(soup):
-    for tag_type, link_attribute_name in Link.types.items():
-        for tag in soup.find_all(tag_type):
-            try:
-                yield Link(
-                    tag_type, tag[link_attribute_name], tag.get('rel'))
-            except KeyError:
-                log.debug('{!r} tag found with no {!r} attribute'.format(
-                    tag_type, link_attribute_name))

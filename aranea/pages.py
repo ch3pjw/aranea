@@ -1,7 +1,4 @@
 from urllib.parse import urlparse
-from bs4 import BeautifulSoup
-
-from links import extract_links
 
 
 class Page:
@@ -25,10 +22,3 @@ class Page:
     @property
     def resource_links(self):
         return filter(lambda l: l.is_resource(), self._links)
-
-
-def make_page(url, html_string):
-    soup = BeautifulSoup(html_string, 'html.parser')
-    base = soup.find('base')
-    base_url = base['href'] if base else ''
-    return Page(url, base_url, extract_links(soup))
