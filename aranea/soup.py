@@ -14,8 +14,8 @@ def _extract_links(soup):
                 yield Link(
                     tag_type, tag[link_attribute_name], tag.get('rel', [''])[0])
             except KeyError:
-                log.debug('{!r} tag found with no {!r} attribute'.format(
-                    tag_type, link_attribute_name))
+                # e.g. <script> with no 'src' attribute
+                pass
 
 
 def make_page(url, html_string):
