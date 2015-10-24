@@ -20,8 +20,20 @@ class Link:
         self.url = urlparse(url)._replace(fragment='')
         self.rel = rel
 
+    def __repr__(self):
+        return '<{} {}>'.format(type(self).__name__, str(self))
+
     def __str__(self):
         return urlunparse(self.url)
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return (
+                other.tag_type == self.tag_type and
+                other.url == self.url and
+                other.rel == self.rel)
+        else:
+            return NotImplemented
 
     def is_resource(self):
         if self.tag_type == 'link':
@@ -33,3 +45,24 @@ class Link:
         'Whether this Link refers to a page in our target domain'
         resolved = urlparse(urljoin(base_url, urlunparse(self.url)))
         return resolved.netloc == domain
+
+
+class Page:
+    def __init__(self, url, base_url, links):
+        self.base_url = base_url
+        self.url = url
+        self.domain = urlparse(url).netloc
+        self.links = links
+
+    @property
+    def urls(self):
+        return set(map(str, self.links))
+
+    @property
+    def internal_urls(self):
+        return set(map(str, filter(
+            lambda l: l.is_internal(self.domain, self.base_url), self.links)))
+
+    @property
+    def resource_urls(self):
+        return set(map(str, filter(lambda l: l.is_resource(), self.links)))
