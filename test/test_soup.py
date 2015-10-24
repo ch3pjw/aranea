@@ -1,19 +1,10 @@
 from unittest import TestCase
 import os
-from urllib.parse import urlparse
 
-from aranea.link_extraction import (
-    extract_links, classify_url, UrlType, resolve)
+from aranea.soup import make_page
 
 
-class TestLinkExtraction(TestCase):
-    urls = {
-        UrlType.absolute: 'http://external.domain.com/path/index.html',
-        UrlType.root_relative: 'relative.html',
-        UrlType.document_relative: '/absolute/within/domain.html',
-        UrlType.schema_agnostic: '//default.scheme.com/path/index.html',
-    }
-
+class TestSoup(TestCase):
     @classmethod
     def setUpClass(cls):
         here = os.path.abspath(os.path.dirname(__file__))
@@ -21,9 +12,18 @@ class TestLinkExtraction(TestCase):
         with open(path) as f:
             cls.index = f.read()
 
-    def test_extract_links(self):
-        self.assertEqual(list(extract_links(self.index)), [])
-
-    def test_classify_url(self):
-        for url_type, url_string in self.urls:
-            self.assertEqual(classify(urlparse(url_string)), url_type)
+    def test_make_soup(self):
+        page = make_page(
+            'http://fictional.example.com/index.html', self.index)
+        self.assertEqual(page.urls, {
+            '',  # FIXME: weed out empty anchor
+            'relative.html',
+            '_static/aiohttp-icon.ico',
+            '//default.scheme.com/path/index.html',
+            'client.html',
+            'static/foo.png',
+            'static/myscript.js',
+            '/absolute/within/domain.html',
+            'static/mystyle.css',
+            'http://external.domain.com/path/index.html'}
+        )

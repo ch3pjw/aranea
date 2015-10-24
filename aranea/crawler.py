@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from soup import make_page
+from .soup import make_page
 
 log = logging.getLogger(__file__)
 
@@ -19,8 +19,8 @@ def get_page(client, url):
 def _crawl(client, url, pages, loop):
     html_string = yield from get_page(client, url)
     page = make_page(url, html_string)
-    new_internal_urls = filter(
-        lambda u: u not in pages, map(str, page.internal_links))
+    internal_urls = page.internal_urls - page.resource_urls
+    new_internal_urls = filter(lambda u: u not in pages, internal_urls)
     tasks = []
     for new_url in new_internal_urls:
         task = loop.create_task(_crawl(client, new_url, pages, loop=loop))
