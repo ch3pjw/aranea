@@ -14,7 +14,8 @@ def get_page(client, url):
     else:
         # FIXME: in production code this would handle redirects and raise
         # suitable exceptions:
-        raise ValueError('need to handle bad responses, redirects...')
+        raise ValueError('Got {} whilst fetching {!r}'.format(
+            response.status, url))
 
 
 @asyncio.coroutine
