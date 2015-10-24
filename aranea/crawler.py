@@ -3,7 +3,7 @@ import logging
 
 from .soup import make_page
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 @asyncio.coroutine
 def get_page(client, url):

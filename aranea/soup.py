@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 from .models import Link, Page
 
-log = logging.getLogger(__file__)
+log = logging.getLogger(__name__)
 
 
 def _extract_links(soup):

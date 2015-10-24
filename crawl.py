@@ -6,7 +6,7 @@ import aiohttp
 
 from aranea.crawler import crawl
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
