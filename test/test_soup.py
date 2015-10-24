@@ -27,3 +27,5 @@ class TestSoup(TestCase):
             'static/mystyle.css',
             'http://external.domain.com/path/index.html'}
         )
+        for link in page.links:
+            self.assertIsInstance(link.rel, str)

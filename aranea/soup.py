@@ -12,7 +12,7 @@ def _extract_links(soup):
         for tag in soup.find_all(tag_type):
             try:
                 yield Link(
-                    tag_type, tag[link_attribute_name], tag.get('rel'))
+                    tag_type, tag[link_attribute_name], tag.get('rel', [''])[0])
             except KeyError:
                 log.debug('{!r} tag found with no {!r} attribute'.format(
                     tag_type, link_attribute_name))
