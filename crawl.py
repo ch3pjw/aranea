@@ -22,3 +22,4 @@ if __name__ == '__main__':
         print(crawled_pages)
     finally:
         client.close()
+        loop.close()
