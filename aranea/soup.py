@@ -21,5 +21,5 @@ def _extract_links(soup):
 def make_page(url, html_string):
     soup = BeautifulSoup(html_string, 'html.parser')
     base = soup.find('base')
-    base_url = base['href'] if base else ''
+    base_url = base['href'] if base else url
     return Page(url, base_url, tuple(_extract_links(soup)))
