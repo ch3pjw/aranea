@@ -9,13 +9,16 @@ log = logging.getLogger(__name__)
 def get_page(client, url):
     log.debug('Fethching {!r}'.format(url))
     response = yield from client.get(url)
-    if response.status == 200:
-        return (yield from response.read())
-    else:
-        # FIXME: in production code this would handle redirects and raise
-        # suitable exceptions:
-        raise ValueError('Got {} whilst fetching {!r}'.format(
-            response.status, url))
+    try:
+        if response.status == 200:
+            return (yield from response.read())
+        else:
+            # FIXME: in production code this would handle redirects and raise
+            # suitable exceptions:
+            raise ValueError('Got {} whilst fetching {!r}'.format(
+                response.status, url))
+    finally:
+        response.close()
 
 
 @asyncio.coroutine
