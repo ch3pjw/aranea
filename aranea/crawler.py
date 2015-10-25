@@ -20,7 +20,11 @@ def get_page(client, url):
 
 @asyncio.coroutine
 def _crawl(client, url, pages, loop):
-    html_string = yield from get_page(client, url)
+    try:
+        html_string = yield from get_page(client, url)
+    except Exception as e:
+        log.exception('Failed to get page {}'.format(url))
+        return e
     page = make_page(url, html_string)
     internal_urls = page.internal_urls - page.resource_urls
     new_internal_urls = filter(lambda u: u not in pages, internal_urls)
@@ -29,8 +33,11 @@ def _crawl(client, url, pages, loop):
         task = loop.create_task(_crawl(client, new_url, pages, loop=loop))
         pages[new_url] = task
         tasks.append(task)
-    for linked_page in (yield from asyncio.gather(*tasks, loop=loop)):
-        pages[linked_page.url] = linked_page
+
+        @task.add_done_callback
+        def store_result(task, new_url=new_url):
+            pages[new_url] = task.result()
+    yield from asyncio.gather(*tasks, loop=loop)
     return page
 
 
