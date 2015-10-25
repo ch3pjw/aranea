@@ -1,4 +1,5 @@
 from unittest import TestCase
+from collections import Sequence
 import os
 
 from aranea.soup import make_page
@@ -28,4 +29,4 @@ class TestSoup(TestCase):
             'http://external.domain.com/path/index.html'}
         )
         for link in page.links:
-            self.assertIsInstance(link.rel, str)
+            self.assertIsInstance(link.rel, Sequence)

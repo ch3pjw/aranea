@@ -37,7 +37,9 @@ class Link:
 
     def is_resource(self):
         if self.tag_type == 'link':
-            return self.rel in self._resource_rel_values
+            # Make matching of resource-type links quite permissive as, e.g.,
+            # "shortcut icon" counts as an "icon":
+            return any(r in self._resource_rel_values for r in self.rel)
         else:
             return self.tag_type != 'a'
 
