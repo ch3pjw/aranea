@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from aiohttp import ClientSession
 
 from aranea.crawler import crawl, get_page
+from aranea.models import Page
 
 
 def ready_future(result, loop):
@@ -78,6 +79,15 @@ class TestCrawler(TestCase):
         pages = self.loop.run_until_complete(crawl(
             None, 'http://aiohttp.readthedocs.org/en/stable/index.html',
             loop=self.loop))
-        self.assertEqual(
-            pages['http://aiohttp.readthedocs.org/en/stable/index.html'],
-            pages['http://aiohttp.readthedocs.org/en/stable/'])
+
+        # Rudimentary check to see that we've fetched all the pages referenced
+        # by other pages:
+        all_referenced_urls = set()
+        for url, page in pages.items():
+            if isinstance(page, Page):
+                all_referenced_urls |= page.internal_urls - page.resource_urls
+        self.assertEqual(set(pages), all_referenced_urls)
+
+        self.assertIsInstance(pages[
+            'http://aiohttp.readthedocs.org/en/stable/_modules/aiohttp/'
+            '_multidict.html'], Exception)
