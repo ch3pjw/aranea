@@ -64,8 +64,8 @@ class TestPage(TestCase):
         s4 = external_base_url + '/some/image.png'
         l4 = Link('img', s4, rel=None)
         p = Page(example_url, base_url, (l1, l2, l3, l4))
-        self.assertEqual(p.resource_urls, {s4})
-        self.assertEqual(p.internal_urls, {s1, s3})
+        self.assertEqual(p.resource_urls, {'http:' + s4})
+        self.assertEqual(p.internal_urls, {s1, base_url + '/' + s3})
         p = Page(example_url, external_base_url, (l1, l2, l3, l4))
         self.assertEqual(p.resource_urls, {s4})
         self.assertEqual(p.internal_urls, {s1})

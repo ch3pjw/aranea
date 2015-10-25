@@ -13,18 +13,18 @@ class TestSoup(TestCase):
             cls.index = f.read()
 
     def test_make_soup(self):
-        page = make_page(
-            'http://fictional.example.com/index.html', self.index)
+        base_url = 'http://fictional.example.com'
+        page = make_page(base_url + '/index.html', self.index)
         self.assertEqual(page.urls, {
-            '',  # FIXME: weed out empty anchor
-            'relative.html',
-            '_static/aiohttp-icon.ico',
-            '//default.scheme.com/path/index.html',
-            'client.html',
-            'static/foo.png',
-            'static/myscript.js',
-            '/absolute/within/domain.html',
-            'static/mystyle.css',
+            base_url + '/index.html',  # From '#' anchor
+            base_url + '/relative.html',
+            base_url + '/static/myicon.ico',
+            'http://default.scheme.com/path/index.html',
+            base_url + '/next_page.html',
+            base_url + '/static/foo.png',
+            base_url + '/static/myscript.js',
+            base_url + '/absolute/within/domain.html',
+            base_url + '/static/mystyle.css',
             'http://external.domain.com/path/index.html'}
         )
         for link in page.links:

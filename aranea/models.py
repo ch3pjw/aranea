@@ -54,15 +54,19 @@ class Page:
         self.domain = urlparse(url).netloc
         self.links = links
 
+    def _resolve(self, link):
+        return urljoin(self.base_url, str(link))
+
     @property
     def urls(self):
-        return set(map(str, self.links))
+        return set(map(self._resolve, self.links))
 
     @property
     def internal_urls(self):
-        return set(map(str, filter(
+        return set(map(self._resolve, filter(
             lambda l: l.is_internal(self.domain, self.base_url), self.links)))
 
     @property
     def resource_urls(self):
-        return set(map(str, filter(lambda l: l.is_resource(), self.links)))
+        return set(map(self._resolve, filter(
+            lambda l: l.is_resource(), self.links)))
