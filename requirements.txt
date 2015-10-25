@@ -1,4 +1,4 @@
 aiohttp
 argh
 beautifulsoup4
-networkx
+graphviz
