@@ -47,5 +47,6 @@ def _crawl(client, url, pages, loop):
 @asyncio.coroutine
 def crawl(client, url, loop):
     pages = {}
-    yield from _crawl(client, url, pages, loop)
+    root_page = yield from _crawl(client, url, pages, loop)
+    pages[url] = root_page
     return pages
