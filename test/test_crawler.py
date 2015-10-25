@@ -1,6 +1,8 @@
 from unittest import TestCase
 from unittest.mock import patch, Mock
+import os
 import asyncio
+from urllib.parse import urlparse
 from aiohttp import ClientSession
 
 from aranea.crawler import crawl, get_page
@@ -12,6 +14,24 @@ def ready_future(result, loop):
     return f
 
 url = 'http://example.com/index.html'
+here = os.path.abspath(os.path.dirname(__file__))
+
+
+class FileGetter:
+    def __init__(self, domain, path):
+        self.domain = domain
+        self.path = path
+
+    def get(self, url_string):
+        url = urlparse(url_string)
+        if url.netloc == self.domain:
+            # FIXME: handle index.html on getting dir here!
+            path = os.path.join(here, self.path, *url.path.split('/'))
+            with open(path) as f:
+                return f.read()
+        else:
+            raise KeyError('{!r} external to {!r}'.format(
+                url_string, self.domain))
 
 
 class TestCrawler(TestCase):
@@ -44,4 +64,16 @@ class TestCrawler(TestCase):
 
     @patch('aranea.crawler.get_page')
     def test_crawl(self, mock_get_page):
-        raise NotImplementedError()
+        # NB: this is far more of an integration test than a unit test. Breaking
+        # it down into more unit-like elements might be a good idea.
+        # We crawl the entirety of a dump of documentation from the internet
+        file_getter = FileGetter(
+            'aiohttp.readthedocs.org', 'aiohttp.readthedocs.org')
+        mock_get_page.side_effect = asyncio.coroutine(
+            lambda client, url: file_getter.get(url))
+        pages = self.loop.run_until_complete(crawl(
+            None, 'http://aiohttp.readthedocs.org/en/stable/index.html',
+            loop=self.loop))
+        self.assertEqual(
+            pages['http://aiohttp.readthedocs.org/en/stable/index.html'],
+            pages['http://aiohttp.readthedocs.org/en/stable/'])
