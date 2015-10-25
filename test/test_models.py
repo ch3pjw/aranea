@@ -65,8 +65,9 @@ class TestPage(TestCase):
             'my_url', base2, [Link('a', 'http://abs.o/lute', rel=[])])
         self.assertEqual(p1, p2)
         p1 = Page('my_url', base1, [Link('a', '/rel.html', rel=[])])
-        p1 = Page('my_url', base2, [Link('a', '/rel.html', rel=[])])
+        p2 = Page('my_url', base2, [Link('a', '/rel.html', rel=[])])
         self.assertNotEqual(p1, p2)
+        self.assertNotEqual(p1, 'hello world')
 
     def test_url_iter(self):
         s1 = base_url + '/some/doc.html'
