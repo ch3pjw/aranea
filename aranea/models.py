@@ -54,13 +54,22 @@ class Page:
         self.base_url = base_url
         self.url = url
         self.domain = urlparse(url).netloc
-        self.links = links
+        self.links = tuple(links)
+
+    def __eq__(self, other):
+        if isinstance(other, type(self)):
+            return (
+                other.url == self.url and
+                other.urls == self.urls)
+        else:
+            return NotImplemented
 
     def _resolve(self, link):
         return urljoin(self.base_url, str(link))
 
     @property
     def urls(self):
+        # FIXME: rename
         return set(map(self._resolve, self.links))
 
     @property

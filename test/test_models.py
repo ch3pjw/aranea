@@ -56,7 +56,19 @@ class TestLink(TestCase):
 
 
 class TestPage(TestCase):
-    def test(self):
+    def test_eq(self):
+        base1 = 'http://base1'
+        base2 = 'http://base2'
+        p1 = Page(
+            'my_url', base1, [Link('a', 'http://abs.o/lute', rel=[])])
+        p2 = Page(
+            'my_url', base2, [Link('a', 'http://abs.o/lute', rel=[])])
+        self.assertEqual(p1, p2)
+        p1 = Page('my_url', base1, [Link('a', '/rel.html', rel=[])])
+        p1 = Page('my_url', base2, [Link('a', '/rel.html', rel=[])])
+        self.assertNotEqual(p1, p2)
+
+    def test_url_iter(self):
         s1 = base_url + '/some/doc.html'
         l1 = Link('a', s1, rel=[])
         s2 = external_base_url + '/another/doc.html'
