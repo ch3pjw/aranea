@@ -25,8 +25,10 @@ class FileGetter:
     def get(self, url_string):
         url = urlparse(url_string)
         if url.netloc == self.domain:
-            # FIXME: handle index.html on getting dir here!
             path = os.path.join(here, self.path, *url.path.split('/'))
+            if url.path.endswith('/'):
+                # Emulate serving of index.html on directory
+                path = os.path.join(path, 'index.html')
             with open(path) as f:
                 return f.read()
         else:
@@ -65,8 +67,10 @@ class TestCrawler(TestCase):
     @patch('aranea.crawler.get_page')
     def test_crawl(self, mock_get_page):
         # NB: this is far more of an integration test than a unit test. Breaking
-        # it down into more unit-like elements might be a good idea.
-        # We crawl the entirety of a dump of documentation from the internet
+        # it down into more unit-like elements might be a good idea, partly
+        # because it takes a huge time time run compared to the other tests
+        # because we crawl the entirety of a documentation dump from the
+        # internet.
         file_getter = FileGetter(
             'aiohttp.readthedocs.org', 'aiohttp.readthedocs.org')
         mock_get_page.side_effect = asyncio.coroutine(
