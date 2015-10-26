@@ -37,7 +37,7 @@ $ nosetests --with-coverage --cover-package=aranea
 To visualise the resultant graph, you'll need to install `graphviz` with
 something like:
 ```
-apt-get install graphviz
+$ apt-get install graphviz
 ```
 
 Features
