@@ -7,7 +7,7 @@ log = logging.getLogger(__name__)
 
 @asyncio.coroutine
 def get_page(client, url):
-    log.debug('Fethching {!r}'.format(url))
+    log.info('Fethching {!r}'.format(url))
     response = yield from client.get(url)
     try:
         if response.status == 200:
