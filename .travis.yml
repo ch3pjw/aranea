@@ -1,0 +1,5 @@
+language: python
+python:
+ - "3.4"
+install: pip install -r requirements.txt -r requirements-test.txt
+script: nosetest test/ --with-coverage --cover-package=aranea
