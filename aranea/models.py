@@ -1,7 +1,14 @@
+'''
+Data-driven abstractions that help with reasoning about the URLs for the
+pages we're fetching.
+'''
 from urllib.parse import urlparse, urlunparse, urljoin
 
 
 class Link:
+    '''Represents an individual URL extracted from a page with some contextual
+    information for reasoning about its puporse.
+    '''
     __slots__ = 'tag_type', 'url', 'rel'  # NB: rel for <link> tags
     types = {
         'a': 'href',
@@ -10,7 +17,7 @@ class Link:
         'img': 'src',
     }
     # A list of <link> tag 'rel' attributes that count as resources,
-    # c.f. hyperlinks to other documents. Seeg
+    # c.f. hyperlinks to other documents. See
     # http://www.w3schools.com/tags/att_link_rel.asp:
     _resource_rel_values = frozenset(('icon', 'prefetch', 'stylesheet'))
 
@@ -50,6 +57,9 @@ class Link:
 
 
 class Page:
+    '''A collection of links retrieved from the page at a given URL, that gives
+    us a simple interface for filtering.
+    '''
     def __init__(self, url, base_url, links):
         self.base_url = base_url
         self.url = url

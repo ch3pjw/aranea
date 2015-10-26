@@ -19,6 +19,10 @@ def _extract_links(soup):
 
 
 def make_page(url, html_string):
+    '''Produces a Page object by processing the given html semantically. We use
+    BeautifulSoup to find the base URL for the page and also to extract a
+    variety of link-containing tags and their attributes.
+    '''
     soup = BeautifulSoup(html_string, 'html.parser')
     base = soup.find('base')
     base_url = base['href'] if base else url
