@@ -6,6 +6,8 @@ following links from a given url. It outputs the graph in `dot` format to allow
 for futher processing/analysis, and stays within the confines of the domain of
 the given url.
 
+[![Build Status](https://travis-ci.org/ch3pjw/aranea.svg)](https://travis-ci.org/ch3pjw/aranea)
+
 Usage
 -----
 
